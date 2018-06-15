@@ -30,6 +30,7 @@ import android.media.Image;
 import android.media.Image.Plane;
 import android.media.ImageReader;
 import android.media.ImageReader.OnImageAvailableListener;
+import android.net.Network;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -161,10 +162,13 @@ public abstract class MrThreadedCameraActivity extends FragmentActivity
     // checking NetworkMode and setting remote URL. This only works for the _withNetwork activity.
     try {
       NetworkMode = getIntent().getStringExtra("NetworkMode");
-      if (NetworkMode.equals("REMOTE_PROCESS")) {
+      if (NetworkMode!=null) {
+        if (NetworkMode.equals("REMOTE_PROCESS")) {
         LOGGER.i("NetworkMode: " + NetworkMode);
         remoteUrl = getIntent().getStringExtra("RemoteURL");
+        }
       }
+
 
       // network activity
       mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), "http://"+ remoteUrl +":8081");

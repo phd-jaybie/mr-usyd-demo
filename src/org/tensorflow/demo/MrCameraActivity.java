@@ -49,6 +49,7 @@ import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.util.List;
 
+import org.opencv.android.OpenCVLoader;
 import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.env.Logger;
 import org.tensorflow.demo.network.NetworkFragment;
@@ -56,6 +57,8 @@ import org.tensorflow.demo.network.NetworkListener;
 import org.tensorflow.demo.network.XmlOperator;
 import org.tensorflow.demo.phd.MrObjectManager;
 import org.tensorflow.demo.simulator.App;
+import org.tensorflow.demo.simulator.AppRandomizer;
+import org.tensorflow.demo.simulator.Randomizer;
 import org.tensorflow.demo.simulator.SingletonAppList;
 
 public abstract class MrCameraActivity extends FragmentActivity
@@ -115,17 +118,47 @@ public abstract class MrCameraActivity extends FragmentActivity
   // Global values and containers for detection using OpenCV.
   public static Integer MIN_MATCH_COUNT = 30;
 
+  private Randomizer randomizer;
+
   protected static SingletonAppList singletonAppList = SingletonAppList.getInstance();
 
   protected static List<App> appList;
   protected static String appListText;
+
+  protected static final String[][] objects = new String[][]
+          {
+                  {"tv", "laptop", "mouse", "remote","keyboard", "scissors","cell phone",
+                          "book"}, //office objects
+                  {"bus", "uhu", "truck", "boat", "traffic light", "fire hydrant", "stop sign",
+                          "parking meter","bench"}, //outside objects
+                  {"bird", "cat", "dog", "horse", "sheep","cow","elephant","bear","zebra",
+                          "giraffe"}, //animal objects
+                  {"frisbee","skis", "snowboard","sports ball","kite","baseball bat",
+                          "baseball glove","skateboard","surfboard",
+                          "tennis racket"}, //sporty objects
+                  {"potted plant", "microwave", "oven","toaster","sink","refrigerator","vase",
+                          "hair drier", "tv", "remote", "toilet", "bed"}, //house objects
+                  {"bottle","wine glass","cup","fork","knife","spoon","bowl","banana","apple",
+                          "sandwich","orange","broccoli","carrot","hot dog","pizza","donut",
+                          "cake", "chair","couch", "dining table"}, //kitchen or food objects
+                  {"person", "bed", "toilet", "laptop", "mouse","keyboard",
+                          "cell phone"} //high sensitivity objects
+          };
+
+  static {
+    if(!OpenCVLoader.initDebug()){
+      LOGGER.d("OpenCV not loaded");
+    } else {
+      LOGGER.d("OpenCV loaded");
+    }
+  }
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
     LOGGER.d("onCreate " + this);
     super.onCreate(null);
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-    getActionBar().setDisplayHomeAsUpEnabled(true);
+    //getActionBar().setDisplayHomeAsUpEnabled(true);
 
     setContentView(R.layout.activity_camera);
     startBackgroundThread();
@@ -150,9 +183,9 @@ public abstract class MrCameraActivity extends FragmentActivity
 
     MIN_MATCH_COUNT = 10*Math.round(30*inputSize/4032);
 
-    fastDebug = getIntent().getBooleanExtra("FastDebug", false);
-    overallTimes = new long[CAPTURE_TIMEOUT+1];
-    detectionTimes = new long[CAPTURE_TIMEOUT+1];
+    //fastDebug = getIntent().getBooleanExtra("FastDebug", false);
+    //overallTimes = new long[CAPTURE_TIMEOUT+1];
+    //detectionTimes = new long[CAPTURE_TIMEOUT+1];
 
     // creating an instance of the MrObjectManager
     if (manager == null) manager = new MrObjectManager();
@@ -175,15 +208,30 @@ public abstract class MrCameraActivity extends FragmentActivity
 
 
     //LOGGER.i("DataGathering, Image, Number of Apps, Frame Size, Overall Frame Processing (ms), Detection Time (ms), Number of hits");
-    logWriter = singletonAppList.getWriter();
+    //logWriter = singletonAppList.getWriter();
 
     utilityHit = 0; // initializing utilityHit
   }
 
   protected void getAppList(){
-    LOGGER.d("Getting a new list from SingletonAppList");
-    appList = singletonAppList.getList();
-    appListText = singletonAppList.getListText();
+
+    LOGGER.d("Creating a new list from SingletonAppList");
+    randomizer = AppRandomizer.create();
+
+    appList = randomizer.fixedAppGenerator(getApplicationContext(), 1);
+
+    String appLogMessage = "App list:\n";
+    for (App app : appList) {
+      appLogMessage = appLogMessage + app.getName() + "\n";
+    }
+    LOGGER.i(appLogMessage);
+    appListText = appLogMessage;
+
+    singletonAppList.setList(appList);
+    singletonAppList.setListText(appListText);
+
+    //appList = singletonAppList.getList();
+    //appListText = singletonAppList.getListText();
   }
 
   private byte[] lastPreviewFrame;

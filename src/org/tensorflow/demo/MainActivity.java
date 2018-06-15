@@ -21,6 +21,7 @@ import org.opencv.android.OpenCVLoader;
 import org.tensorflow.demo.env.Logger;
 import org.tensorflow.demo.phd.MrDetectorActivity;
 import org.tensorflow.demo.phd.MrNullActivity;
+import org.tensorflow.demo.phd.MrThreadedDemoDetectorActivity;
 import org.tensorflow.demo.phd.MrThreadedDetectorActivity;
 import org.tensorflow.demo.phd.ProtectedMrDetectorActivity;
 import org.tensorflow.demo.phd.ProtectedMrDetectorActivityWithNetwork;
@@ -307,7 +308,7 @@ public class MainActivity extends Activity {
         if (!checkList()) return;
 
         if (Threading) {
-            Intent detectorIntent = new Intent(this, MrThreadedDetectorActivity.class);
+            Intent detectorIntent = new Intent(this, MrThreadedDemoDetectorActivity.class);
             detectorIntent.putExtra("InputSize", inputSize);
             detectorIntent.putExtra("FastDebug", FastDebug);
             startActivity(detectorIntent);
