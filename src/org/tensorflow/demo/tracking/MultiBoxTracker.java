@@ -306,26 +306,35 @@ public class MultiBoxTracker {
     if (!initialized) {
       cvTrackedObjects.clear();
 
-      logger.i("Initializing ObjectTracker: %dx%d", w, h);
+      logger.i("%d, Initializing CVTracker: %dx%d", timestamp, w, h);
 
       for (final TrackedRecognition recognition: trackedObjects) {
 
         CvTrackedRecognition cvTrackedRecognition = new CvTrackedRecognition();
-        cvTrackedRecognition.trackedRecognition = recognition;
+        Mat currentFrame = new Mat();
 
         RectF location = recognition.location;
         int locX = (int) location.centerX();
         int locY = (int) location.centerY();
         int locW = (int) location.width()/2;
         int locH = (int) location.height()/2;
+
+        logger.i("%d, FrameW: %d, FrameH: %d", timestamp, frame.getWidth(), frame.getHeight());
+        logger.i("%d, RectFX: %d, RectFH: %d, RectFW: %d, RectFH: %d",
+                timestamp, locX, locY, locW, locH);
+        final Bitmap refImage = Bitmap.createBitmap(frame, locX, locY, locW, locH);
+        Utils.bitmapToMat(refImage, currentFrame);
+        logger.i("%d, MatW: %d, MatH: %d",
+                timestamp,
+                currentFrame.cols(),
+                currentFrame.rows());
+
+        cvTrackedRecognition.trackedRecognition = recognition;
         cvTrackedRecognition.location = recognition.location;
         cvTrackedRecognition.color = recognition.color;
         cvTrackedRecognition.detectionConfidence = recognition.detectionConfidence;
         cvTrackedRecognition.title = recognition.title;
-
-        final Bitmap refImage = Bitmap.createBitmap(frame, locX, locY, locW, locH);
-        Utils.bitmapToMat(refImage, cvTrackedRecognition.RefImageMat);
-
+        cvTrackedRecognition.RefImageMat = currentFrame;
         cvTrackedObjects.add(cvTrackedRecognition);
       }
 
@@ -343,8 +352,10 @@ public class MultiBoxTracker {
     }
 
     trackedObjects.clear();
+    long start = System.currentTimeMillis();
+
     for (final CvTrackedRecognition cvTrackedRecognition: cvTrackedObjects){
-      logger.i("Tracking object:" + cvTrackedRecognition.title);
+      logger.i("Tracking object: " + cvTrackedRecognition.title);
 
       RectF result = orbTracker(cvTrackedRecognition.RefImageMat, frame);
 
@@ -353,6 +364,10 @@ public class MultiBoxTracker {
         trackedObjects.add(cvTrackedRecognition.trackedRecognition);
       }
     }
+
+    long end = System.currentTimeMillis() - start;
+    logger.i("CV Frame tracking time: %d", end);
+
     //objectTracker.nextFrame(frame, null, timestamp, null, true);
 
     // Clean up any objects not worth tracking any more.
@@ -374,7 +389,7 @@ public class MultiBoxTracker {
   }
 
   private RectF orbTracker(Mat reference, Bitmap frame){
-    RectF location = null;
+
     final ORB featureDetector = ORB.create();
 
     ArrayList<Point> points = new ArrayList<>();
@@ -517,7 +532,7 @@ public class MultiBoxTracker {
             (float) points.get(3).y};
     Arrays.sort(xValues);
     Arrays.sort(yValues);
-    location.set(xValues[0], yValues[0], xValues[3], yValues[3]);
+    RectF location = new RectF(xValues[0], yValues[0], xValues[3], yValues[3]);
 
     return location;
   }
@@ -557,7 +572,6 @@ public class MultiBoxTracker {
     }
 
     if (objectTracker == null) {
-      logger.i("ProcessResults: Object Tracker is null.");
       trackedObjects.clear();
       for (final Pair<Float, Recognition> potential : rectsToTrack) {
         final TrackedRecognition trackedRecognition = new TrackedRecognition();

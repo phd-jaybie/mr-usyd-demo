@@ -403,7 +403,7 @@ public class MrDetectorActivity extends MrCameraActivity implements OnImageAvail
                 previewWidth,
                 previewHeight,
                 sensorOrientation,
-                inputBitmap,
+                rgbFrameBitmap, //inputBitmap,
                 timestamp);
         trackingOverlay.postInvalidate();
 
