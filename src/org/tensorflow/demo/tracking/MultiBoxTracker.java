@@ -16,7 +16,9 @@ limitations under the License.
 package org.tensorflow.demo.tracking;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -24,25 +26,34 @@ import android.graphics.Paint;
 import android.graphics.Paint.Cap;
 import android.graphics.Paint.Join;
 import android.graphics.Paint.Style;
+import android.graphics.Rect;
 import android.graphics.RectF;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.widget.Toast;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Vector;
 
 import org.opencv.android.Utils;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
+import org.opencv.core.CvException;
 import org.opencv.core.CvType;
 import org.opencv.core.DMatch;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDMatch;
+import org.opencv.core.MatOfFloat;
+import org.opencv.core.MatOfInt;
 import org.opencv.core.MatOfKeyPoint;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
@@ -53,7 +64,9 @@ import org.opencv.features2d.ORB;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.tracking.Tracker;
 import org.opencv.tracking.TrackerMIL;
+import org.opencv.video.Video;
 import org.tensorflow.demo.Classifier.Recognition;
+import org.tensorflow.demo.R;
 import org.tensorflow.demo.env.BorderedText;
 import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.env.Logger;
@@ -71,6 +84,10 @@ public class MultiBoxTracker {
   private final Logger logger = new Logger();
 
   private static final float TEXT_SIZE_DIP = 18;
+
+  private static final int TRACKING_TIMEOUT = 500;
+
+  private static final int TRACKING_DIFFERENCE = 100;
 
   // Maximum percentage of a box that can be overlapped by another box at detection time. Otherwise
   // the lower scored box (new or old) will be removed.
@@ -92,11 +109,20 @@ public class MultiBoxTracker {
     Color.parseColor("#AA33AA"), Color.parseColor("#0D0068")
   };
 
+  static final String[] sensitiveObjects = new String[]
+          {"person", "bed", "toilet", "laptop", "cell phone"}; //high sensitivity objects
+
   private final Queue<Integer> availableColors = new LinkedList<Integer>();
 
   public ObjectTracker objectTracker;
 
   final List<Pair<Float, RectF>> screenRects = new LinkedList<Pair<Float, RectF>>();
+
+  private Bitmap prevFrame;
+
+  public void setFrame(Bitmap bitmap){
+    prevFrame = bitmap;
+  }
 
   private static class TrackedRecognition {
     ObjectTracker.TrackedObject trackedObject;
@@ -104,7 +130,8 @@ public class MultiBoxTracker {
     float detectionConfidence;
     int color;
     String title;
-
+    long lastUpdate;
+    int coverColor;
   }
 
   private final List<TrackedRecognition> trackedObjects = new LinkedList<TrackedRecognition>();
@@ -134,6 +161,8 @@ public class MultiBoxTracker {
   private int sensorOrientation;
   private Context context;
 
+  private Resources res;
+
   public MultiBoxTracker(final Context context) {
     this.context = context;
     for (final int color : COLORS) {
@@ -151,6 +180,9 @@ public class MultiBoxTracker {
         TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, context.getResources().getDisplayMetrics());
     borderedText = new BorderedText(textSizePx);
+
+    res = context.getResources();
+
   }
 
   private Matrix getFrameToCanvasMatrix() {
@@ -225,13 +257,39 @@ public class MultiBoxTracker {
       boxPaint.setColor(recognition.color);
 
       final float cornerSize = Math.min(trackedPos.width(), trackedPos.height()) / 8.0f;
-      canvas.drawRoundRect(trackedPos, cornerSize, cornerSize, boxPaint);
 
-      final String labelString =
-          !TextUtils.isEmpty(recognition.title)
-              ? String.format("%s %.2f", recognition.title, recognition.detectionConfidence)
-              : String.format("%.2f", recognition.detectionConfidence);
-      borderedText.drawText(canvas, trackedPos.left + cornerSize, trackedPos.bottom, labelString);
+      if (Arrays.asList(sensitiveObjects).contains(recognition.title)) {
+
+        // expanded the destination Rect to prevent leaks
+        final RectF secretPos = new RectF(
+                0.9f*trackedPos.left,
+                1.1f*trackedPos.top,
+                1.1f*trackedPos.right,
+                0.9f*trackedPos.bottom);
+
+        /*Bitmap bitmap = BitmapFactory.decodeResource(res, R.drawable.csiro);
+        canvas.drawBitmap(bitmap,
+                new Rect(0,0,bitmap.getWidth(),bitmap.getHeight()),
+                trackedPos,
+                boxPaint);*/
+
+        Paint fillPaint = new Paint();
+        fillPaint.setStyle(Paint.Style.FILL);
+        fillPaint.setColor(recognition.coverColor);
+
+        //float cornerSize = Math.min(secretPos.width(), secretPos.height()) / 16.0f;
+        canvas.drawRect(trackedPos, fillPaint);    // fill
+
+      } else {
+
+        canvas.drawRoundRect(trackedPos, cornerSize, cornerSize, boxPaint);
+
+        final String labelString =
+                !TextUtils.isEmpty(recognition.title)
+                        ? String.format("%s %.2f", recognition.title, recognition.detectionConfidence)
+                        : String.format("%.2f", recognition.detectionConfidence);
+        borderedText.drawText(canvas, trackedPos.left + cornerSize, trackedPos.bottom, labelString);
+      }
     }
   }
 
@@ -320,14 +378,18 @@ public class MultiBoxTracker {
         int locH = (int) location.height()/2;
 
         logger.i("%d, FrameW: %d, FrameH: %d", timestamp, frame.getWidth(), frame.getHeight());
-        logger.i("%d, RectFX: %d, RectFH: %d, RectFW: %d, RectFH: %d",
-                timestamp, locX, locY, locW, locH);
+        logger.i("%d, Object: %s, RectFX: %d, RectFY: %d, RectFW: %d, RectFH: %d",
+                timestamp, recognition.title, locX, locY, locW, locH);
+
+        if ((locX + locW > w) || (locY + locH > h) || locX < 0 || locY < 0) continue;
+
         final Bitmap refImage = Bitmap.createBitmap(frame, locX, locY, locW, locH);
         Utils.bitmapToMat(refImage, currentFrame);
         logger.i("%d, MatW: %d, MatH: %d",
                 timestamp,
                 currentFrame.cols(),
                 currentFrame.rows());
+        final int coverColor = refImage.getPixel(0, 0);
 
         cvTrackedRecognition.trackedRecognition = recognition;
         cvTrackedRecognition.location = recognition.location;
@@ -335,6 +397,8 @@ public class MultiBoxTracker {
         cvTrackedRecognition.detectionConfidence = recognition.detectionConfidence;
         cvTrackedRecognition.title = recognition.title;
         cvTrackedRecognition.RefImageMat = currentFrame;
+        cvTrackedRecognition.trackedRecognition.coverColor = coverColor;
+
         cvTrackedObjects.add(cvTrackedRecognition);
       }
 
@@ -342,7 +406,6 @@ public class MultiBoxTracker {
       frameHeight = h;
       this.sensorOrientation = sensorOrienation;
       initialized = true;
-
       return;
     }
 
@@ -351,19 +414,66 @@ public class MultiBoxTracker {
       return;
     }
 
-    trackedObjects.clear();
+    //Mat H1 = histogram(prevFrame);
+    //Mat H2 = histogram(frame);
+    //double frameSimilarity = Imgproc.compareHist(H1, H2, Imgproc.CV_COMP_BHATTACHARYYA);
+
+    //logger.i("%d: Frame Correlation: %f", timestamp,frameSimilarity);
+
+    //Mat flow = calcOpticalFlow(prevFrame, frame);
+
+/*    Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+    try {
+      Utils.matToBitmap(flow, bmp);
+    } catch (CvException e) {
+      logger.d("CV Exception",e.getMessage());
+    }
+
+    FileOutputStream out = null;
+    try {
+      out = new FileOutputStream("flow.png");
+      bmp.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
+      // PNG is a lossless format, the compression factor (100) is ignored
+    } catch (Exception e) {
+      e.printStackTrace();
+    } finally {
+      try {
+        if (out != null) {
+          out.close();
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }*/
+
+    Iterator<TrackedRecognition> iterator = trackedObjects.iterator();
+
+    while (iterator.hasNext()) {
+      TrackedRecognition recognition = iterator.next();
+      if (SystemClock.uptimeMillis() - recognition.lastUpdate > TRACKING_TIMEOUT) {
+        iterator.remove();
+        // Remove tracked objects if last update was more than a second ago.
+      }
+    }
+    //trackedObjects.clear(); // Does not have to be cleared everytime.
+
     long start = System.currentTimeMillis();
+
+    List<Pair<Mat, TrackedRecognition>> refImageMats = new ArrayList<>();
 
     for (final CvTrackedRecognition cvTrackedRecognition: cvTrackedObjects){
       logger.i("Tracking object: " + cvTrackedRecognition.title);
 
-      RectF result = orbTracker(cvTrackedRecognition.RefImageMat, frame);
-
-      if (result!=null) {
-        cvTrackedRecognition.trackedRecognition.location = result;
-        trackedObjects.add(cvTrackedRecognition.trackedRecognition);
-      }
+      refImageMats.add(new Pair<>(cvTrackedRecognition.RefImageMat,cvTrackedRecognition.trackedRecognition));
     }
+
+    orbTracker(timestamp,refImageMats, frame);
+
+/*    if (!results.isEmpty()) {
+      for (final TrackedRecognition result: results){
+        trackedObjects.add(result);
+      }
+    }*/
 
     long end = System.currentTimeMillis() - start;
     logger.i("CV Frame tracking time: %d", end);
@@ -388,58 +498,108 @@ public class MultiBoxTracker {
 */
   }
 
-  private RectF orbTracker(Mat reference, Bitmap frame){
+  private Mat histogram(Bitmap bitmap){
+
+    Mat img = new Mat();
+    Utils.bitmapToMat(bitmap, img);
+    Imgproc.cvtColor(img, img, Imgproc.COLOR_RGB2GRAY);
+
+    Vector<Mat> bgr_planes = new Vector<Mat>();
+    Core.split(img, bgr_planes);
+
+    MatOfInt histSize = new MatOfInt(256);
+
+    final MatOfFloat histRange = new MatOfFloat(0f, 256f);
+
+    boolean accumulate = false;
+    Mat b_hist = new  Mat();
+
+    Imgproc.calcHist(bgr_planes, new MatOfInt(0),new Mat(), b_hist, histSize, histRange, accumulate);
+    return b_hist;
+
+  }
+
+  private Mat calcOpticalFlow(Bitmap prev, Bitmap next){
+
+    long start = SystemClock.uptimeMillis();
+
+    Mat prevMat = new Mat();
+    Utils.bitmapToMat(prev, prevMat);
+    Imgproc.cvtColor(prevMat, prevMat, Imgproc.COLOR_RGB2GRAY);
+
+    Mat nextMat = new Mat();
+    Utils.bitmapToMat(next, nextMat);
+    Imgproc.cvtColor(nextMat, nextMat, Imgproc.COLOR_RGB2GRAY);
+
+    Mat flow = new Mat(prevMat.size(), CvType.CV_8UC1);
+
+    Video.calcOpticalFlowFarneback(prevMat, nextMat, flow,0.5,1, 1, 1, 5,
+            1.1,1);
+
+    logger.i("Optical Flow time: %d", SystemClock.uptimeMillis() - start);
+
+    return flow;
+
+  }
+
+  private void orbTracker(long timestamp,
+                          List<Pair<Mat, TrackedRecognition>> references,
+                          Bitmap frame){
 
     final ORB featureDetector = ORB.create();
+    final DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
 
-    ArrayList<Point> points = new ArrayList<>();
-    List<MatOfPoint> mScenePoints = new ArrayList<>();
-
-    Mat refDescriptors = new Mat();
     Mat qryDescriptors = new Mat();
-
-    MatOfKeyPoint refKeypoints = new MatOfKeyPoint();
     MatOfKeyPoint qryKeypoints = new MatOfKeyPoint();
-    MatOfDMatch matches = new MatOfDMatch();
 
-    DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
 
-    Mat refImage = reference;
     Mat qryImage = new Mat();
     Utils.bitmapToMat(frame, qryImage);
-
-    featureDetector.detect(refImage, refKeypoints);
-    featureDetector.compute(refImage, refKeypoints, refDescriptors);
 
     featureDetector.detect(qryImage, qryKeypoints);
     featureDetector.compute(qryImage, qryKeypoints, qryDescriptors);
 
-    try{
-      matcher.match(refDescriptors, qryDescriptors, matches);
-      //match(refDescriptors, qryDescriptors, matches);
+    for (Pair<Mat, TrackedRecognition> reference: references){
 
-      long time = System.currentTimeMillis();
+      final String objectName = reference.second.title;
 
-      //Using regular matching
-      List<DMatch> matchesList = matches.toList();
+      ArrayList<Point> points = new ArrayList<>();
+      List<MatOfPoint> mScenePoints = new ArrayList<>();
 
-      Double max_dist = 0.0;
-      Double min_dist = 100.0;
+      Mat refDescriptors = new Mat();
+      MatOfKeyPoint refKeypoints = new MatOfKeyPoint();
+      final Mat refImage = reference.first;
+      MatOfDMatch matches = new MatOfDMatch();
 
-      for (int i = 0; i < matchesList.size(); i++) {
-        Double dist = (double) matchesList.get(i).distance;
-        if (dist < min_dist)
-          min_dist = dist;
-        if (dist > max_dist)
-          max_dist = dist;
-      }
+      featureDetector.detect(refImage, refKeypoints);
+      featureDetector.compute(refImage, refKeypoints, refDescriptors);
 
-      // ratio test
-      LinkedList<DMatch> good_matches = new LinkedList<>();
-      for (int i = 0; i < matchesList.size(); i++) {
-        if (matchesList.get(i).distance <= (1.5 * min_dist))
-          good_matches.addLast(matchesList.get(i));
-      }
+      try{
+        matcher.match(refDescriptors, qryDescriptors, matches);
+        //match(refDescriptors, qryDescriptors, matches);
+
+        long time = System.currentTimeMillis();
+
+        //Using regular matching
+        List<DMatch> matchesList = matches.toList();
+
+        Double max_dist = 0.0;
+        Double min_dist = 100.0;
+
+        for (int i = 0; i < matchesList.size(); i++) {
+          Double dist = (double) matchesList.get(i).distance;
+          if (dist < min_dist)
+            min_dist = dist;
+          if (dist > max_dist)
+            max_dist = dist;
+        }
+
+        // ratio test
+        LinkedList<DMatch> good_matches = new LinkedList<>();
+        for (int i = 0; i < matchesList.size(); i++) {
+          if (matchesList.get(i).distance <= (1.5 * min_dist))
+            good_matches.addLast(matchesList.get(i));
+        }
 /*            for (Iterator<MatOfDMatch> iterator = matches.iterator(); iterator.hasNext();) {
                 MatOfDMatch matOfDMatch = iterator.next();
                 if (matOfDMatch.toArray()[0].distance / matOfDMatch.toArray()[1].distance < 0.75) {
@@ -447,94 +607,128 @@ public class MultiBoxTracker {
                 }
             }*/
 
-      long time1 = System.currentTimeMillis();
+        long time1 = System.currentTimeMillis();
 
-      if (good_matches.size() > minMatchCount){
+        if (good_matches.size() > minMatchCount){
 
-        /** get keypoint coordinates of good matches to find homography and remove outliers
-         * using ransac */
-        /** Also, always remember that this is already a transformation process. */
+          /** get keypoint coordinates of good matches to find homography and remove outliers
+           * using ransac */
+          /** Also, always remember that this is already a transformation process. */
 
-        List<org.opencv.core.Point> refPoints = new ArrayList<>();
-        List<org.opencv.core.Point> mPoints = new ArrayList<>();
-        for(int i = 0; i<good_matches.size(); i++){
-          refPoints.add(refKeypoints.toList().get(good_matches.get(i).queryIdx).pt);
-          mPoints.add(qryKeypoints.toList().get(good_matches.get(i).trainIdx).pt);
-        }
-        // convertion of data types - there is maybe a more beautiful way
-        Mat outputMask = new Mat();
-        MatOfPoint2f rPtsMat = new MatOfPoint2f();
-        rPtsMat.fromList(refPoints);
-        MatOfPoint2f mPtsMat = new MatOfPoint2f();
-        mPtsMat.fromList(mPoints);
+          List<org.opencv.core.Point> refPoints = new ArrayList<>();
+          List<org.opencv.core.Point> mPoints = new ArrayList<>();
+          for(int i = 0; i<good_matches.size(); i++){
+            refPoints.add(refKeypoints.toList().get(good_matches.get(i).queryIdx).pt);
+            mPoints.add(qryKeypoints.toList().get(good_matches.get(i).trainIdx).pt);
+          }
+          // convertion of data types - there is maybe a more beautiful way
+          Mat outputMask = new Mat();
+          MatOfPoint2f rPtsMat = new MatOfPoint2f();
+          rPtsMat.fromList(refPoints);
+          MatOfPoint2f mPtsMat = new MatOfPoint2f();
+          mPtsMat.fromList(mPoints);
 
-        Mat obj_corners = new Mat(4,1, CvType.CV_32FC2);
-        Mat scene_corners = new Mat(4,1,CvType.CV_32FC2);
+          Mat obj_corners = new Mat(4,1, CvType.CV_32FC2);
+          Mat scene_corners = new Mat(4,1,CvType.CV_32FC2);
 
-        obj_corners.put(0, 0, new double[] {0,0});
-        obj_corners.put(1, 0, new double[] {refImage.width()-1,0});
-        obj_corners.put(2, 0, new double[] {refImage.width()-1,refImage.height()-1});
-        obj_corners.put(3, 0, new double[] {0,refImage.height()-1});
+          obj_corners.put(0, 0, new double[] {0,0});
+          obj_corners.put(1, 0, new double[] {refImage.width()-1,0});
+          obj_corners.put(2, 0, new double[] {refImage.width()-1,refImage.height()-1});
+          obj_corners.put(3, 0, new double[] {0,refImage.height()-1});
 
-        // Find homography - here just used to perform match filtering with RANSAC, but could be used to e.g. stitch images
-        // the smaller the allowed reprojection error (here 15), the more matches are filtered
-        Mat Homog = Calib3d.findHomography(rPtsMat, mPtsMat, Calib3d.RANSAC, 15, outputMask, 2000, 0.995);
-        Core.perspectiveTransform(obj_corners,scene_corners,Homog);
+          // Find homography - here just used to perform match filtering with RANSAC, but could be used to e.g. stitch images
+          // the smaller the allowed reprojection error (here 15), the more matches are filtered
+          Mat Homog = Calib3d.findHomography(rPtsMat, mPtsMat, Calib3d.RANSAC, 15, outputMask, 2000, 0.995);
 
-        MatOfPoint sceneCorners = new MatOfPoint();
-        for (int i=0; i < scene_corners.rows(); i++) {
-          org.opencv.core.Point point = new org.opencv.core.Point();
-          point.set(scene_corners.get(i,0));
-          points.add(point);
-        }
-        sceneCorners.fromList(points);
-        mScenePoints.add(sceneCorners);
+          Core.perspectiveTransform(obj_corners,scene_corners,Homog);
 
-        if (Imgproc.contourArea(mScenePoints.get(0)) > (minMatchCount*minMatchCount)) {
-          logger.i("Time to Match: " + Long.toString((time1 - time))
-                  + ", Number of matches: " + good_matches.size()
-                  + " (" + Integer.toString(minMatchCount) + ")"
-                  + ", Time to transform: " + Long.toString((System.currentTimeMillis() - time1)));
+          MatOfPoint sceneCorners = new MatOfPoint();
+          for (int i=0; i < scene_corners.rows(); i++) {
+            org.opencv.core.Point point = new org.opencv.core.Point();
+            point.set(scene_corners.get(i,0));
+            points.add(point);
+          }
+          sceneCorners.fromList(points);
+          mScenePoints.add(sceneCorners);
+
+          if (Imgproc.contourArea(mScenePoints.get(0)) > (minMatchCount*minMatchCount)) {
+/*            logger.i("Time to Match: " + Long.toString((time1 - time))
+                    + ", Number of matches: " + good_matches.size()
+                    + " (" + Integer.toString(minMatchCount) + ")"
+                    + ", Time to transform: " + Long.toString((System.currentTimeMillis() - time1)));*/
+          } else {
+            // Transformation is too small or skewed, object probably not in view, or matching
+            // error.
+/*            logger.i( "Time to Match: " + Long.toString((time1 - time))
+                    + ", Object probably not in view even with " + good_matches.size()
+                    + " (" + Integer.toString(minMatchCount) + ") matches.");*/
+
+            return;
+          }
+          //result = "Enough matches.";
         } else {
-          // Transformation is too small or skewed, object probably not in view, or matching
-          // error.
-          logger.i( "Time to Match: " + Long.toString((time1 - time))
-                  + ", Object probably not in view even with " + good_matches.size()
-                  + " (" + Integer.toString(minMatchCount) + ") matches.");
-
-          return null;
+/*          logger.i( "Time to Match: " + Long.toString((System.currentTimeMillis() - time))
+                  + ", Not Enough Matches (" + good_matches.size()
+                  + "/" + Integer.toString(minMatchCount) + ")");*/
+          //result = "Not enough matches.";
+          return;
         }
-        //result = "Enough matches.";
-      } else {
-        logger.i( "Time to Match: " + Long.toString((System.currentTimeMillis() - time))
-                + ", Not Enough Matches (" + good_matches.size()
-                + "/" + Integer.toString(minMatchCount) + ")");
-        //result = "Not enough matches.";
-        return null;
+
+      } catch (Exception e) {
+        e.printStackTrace();
+/*
+        logger.d("Cannot process.");
+*/
+        return;
       }
 
-    } catch (Exception e) {
-      e.printStackTrace();
-      logger.d("Cannot process.");
-      return null;
+      /**
+       * Using RectF to draw a fixed rectangle bounding box.
+       */
+      float[] xValues = {(float) points.get(0).x,
+              (float) points.get(1).x,
+              (float) points.get(2).x,
+              (float) points.get(3).x};
+      float[] yValues = {(float) points.get(0).y,
+              (float) points.get(1).y,
+              (float) points.get(2).y,
+              (float) points.get(3).y};
+      Arrays.sort(xValues);
+      Arrays.sort(yValues);
+      RectF location = new RectF(xValues[0], yValues[0], xValues[3], yValues[3]);
+
+      reference.second.location = location;
+      reference.second.lastUpdate = SystemClock.uptimeMillis();;
+
+      final LinkedList<TrackedRecognition> copyList =
+              new LinkedList<TrackedRecognition>(trackedObjects);
+
+      trackedObjects.clear();
+      for (TrackedRecognition recognition: copyList) {
+        if (recognition.title == objectName){
+          RectF previousLocation = recognition.location;
+          double prevX = previousLocation.centerX();
+          double prevY = previousLocation.centerY();
+          double locX = location.centerX();
+          double locY = location.centerY();
+          double diff = Math.sqrt((prevX - locX)*(prevX - locX) + (prevY - locY)*(prevY - locY));
+          if (diff < TRACKING_DIFFERENCE) {
+            logger.i("Diff: %f", diff);
+
+            // If same name and is less than 50 pixels away, update the existing tracked object.
+            recognition.detectionConfidence = reference.second.detectionConfidence;
+            recognition.lastUpdate = SystemClock.uptimeMillis();;
+            //recognition.location = location;
+          }
+          trackedObjects.add(recognition);
+
+        } else {
+          trackedObjects.add(reference.second); // New/updated detections are added.
+        }
+      }
+
     }
 
-    /**
-     * Using RectF to draw a fixed rectangle bounding box.
-     */
-    float[] xValues = {(float) points.get(0).x,
-            (float) points.get(1).x,
-            (float) points.get(2).x,
-            (float) points.get(3).x};
-    float[] yValues = {(float) points.get(0).y,
-            (float) points.get(1).y,
-            (float) points.get(2).y,
-            (float) points.get(3).y};
-    Arrays.sort(xValues);
-    Arrays.sort(yValues);
-    RectF location = new RectF(xValues[0], yValues[0], xValues[3], yValues[3]);
-
-    return location;
   }
 
   private void processResults(
@@ -580,6 +774,8 @@ public class MultiBoxTracker {
         trackedRecognition.trackedObject = null;
         trackedRecognition.title = potential.second.getTitle();
         trackedRecognition.color = COLORS[trackedObjects.size()];
+        trackedRecognition.lastUpdate = SystemClock.uptimeMillis();
+
         trackedObjects.add(trackedRecognition);
 
         if (trackedObjects.size() >= COLORS.length) {
@@ -706,6 +902,7 @@ public class MultiBoxTracker {
     trackedRecognition.detectionConfidence = potential.first;
     trackedRecognition.trackedObject = potentialObject;
     trackedRecognition.title = potential.second.getTitle();
+    trackedRecognition.lastUpdate = SystemClock.uptimeMillis();;
 
     // Use the color from a replaced object before taking one from the color queue.
     trackedRecognition.color =

@@ -412,6 +412,7 @@ public class MrDetectorActivity extends MrCameraActivity implements OnImageAvail
             readyForNextImage();
             return;
         }
+
         computingDetection = true;
         LOGGER.i("Preparing image " + currTimestamp + " for detection in bg thread.");
 
@@ -436,6 +437,8 @@ public class MrDetectorActivity extends MrCameraActivity implements OnImageAvail
                 new Runnable() {
                     @Override
                     public void run() {
+
+                        tracker.setFrame(rgbFrameBitmap);
 
                         cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
                         final Canvas canvas = new Canvas(cropCopyBitmap);
