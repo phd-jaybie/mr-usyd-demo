@@ -372,20 +372,25 @@ public class MultiBoxTracker {
         Mat currentFrame = new Mat();
 
         RectF location = recognition.location;
-        int locX = (int) location.centerX();
-        int locY = (int) location.centerY();
-        int locW = (int) location.width()/2;
-        int locH = (int) location.height()/2;
+        Rect roundedLocation = new Rect();
+        location.round(roundedLocation);
 
         logger.i("%d, FrameW: %d, FrameH: %d", timestamp, frame.getWidth(), frame.getHeight());
         logger.i("%d, Object: %s, RectFL: %d, RectFT: %d, RectFR: %d, RectFB: %d",
                 timestamp, recognition.title, location.left, location.top, location.right, location.bottom);
         logger.i("%d, Object: %s, RectFX: %d, RectFY: %d, RectFW: %d, RectFH: %d",
-                timestamp, recognition.title, locX, locY, locW, locH);
+                timestamp, recognition.title,
+                roundedLocation.left,
+                roundedLocation.top,
+                roundedLocation.right - roundedLocation.left,
+                roundedLocation.bottom - roundedLocation.top);
 
-        if ((locX + locW > w) || (locY + locH > h) || locX < 0 || locY < 0) continue;
+        final Bitmap refImage = Bitmap.createBitmap(frame,
+                roundedLocation.left,
+                roundedLocation.top,
+                roundedLocation.right - roundedLocation.left,
+                roundedLocation.bottom - roundedLocation.top);
 
-        final Bitmap refImage = Bitmap.createBitmap(frame, locX, locY, locW, locH);
         Utils.bitmapToMat(refImage, currentFrame);
         logger.i("%d, MatW: %d, MatH: %d",
                 timestamp,
