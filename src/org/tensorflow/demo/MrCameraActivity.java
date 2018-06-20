@@ -52,6 +52,7 @@ import java.util.List;
 import org.opencv.android.OpenCVLoader;
 import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.env.Logger;
+import org.tensorflow.demo.initializer.ObjectReferenceList;
 import org.tensorflow.demo.network.NetworkFragment;
 import org.tensorflow.demo.network.NetworkListener;
 import org.tensorflow.demo.network.XmlOperator;
@@ -122,6 +123,8 @@ public abstract class MrCameraActivity extends FragmentActivity
 
   protected static SingletonAppList singletonAppList = SingletonAppList.getInstance();
 
+  protected static ObjectReferenceList objectReferenceList = ObjectReferenceList.getInstance();
+
   protected static List<App> appList;
   protected static String appListText;
 
@@ -178,7 +181,7 @@ public abstract class MrCameraActivity extends FragmentActivity
 
     LOGGER.d(appListText);
 
-    inputSize = getIntent().getIntExtra("InputSize",300);
+    inputSize = getIntent().getIntExtra("InputSize",500);
     LOGGER.i("Input Size: "+ inputSize);
 
     MIN_MATCH_COUNT = 10*Math.round(30*inputSize/4032);

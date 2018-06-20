@@ -85,7 +85,7 @@ public class MultiBoxTracker {
 
   private static final float TEXT_SIZE_DIP = 18;
 
-  private static final int TRACKING_TIMEOUT = 500;
+  private static final int TRACKING_TIMEOUT = 1000;
 
   private static final int TRACKING_DIFFERENCE = 100;
 
@@ -352,7 +352,7 @@ public class MultiBoxTracker {
   public synchronized void FrameTracker(
           final int w,
           final int h,
-          final int sensorOrienation,
+          final int sensorOrientation,
           final Bitmap frame,
           final long timestamp) {
 
@@ -404,7 +404,7 @@ public class MultiBoxTracker {
 
       frameWidth = w;
       frameHeight = h;
-      this.sensorOrientation = sensorOrienation;
+      this.sensorOrientation = sensorOrientation;
       initialized = true;
       return;
     }

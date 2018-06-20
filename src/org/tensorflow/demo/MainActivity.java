@@ -19,7 +19,9 @@ import android.widget.TextView;
 
 import org.opencv.android.OpenCVLoader;
 import org.tensorflow.demo.env.Logger;
+import org.tensorflow.demo.initializer.ObjectReferenceList;
 import org.tensorflow.demo.phd.MrDetectorActivity;
+import org.tensorflow.demo.phd.MrInitializeDemoDetectorActivity;
 import org.tensorflow.demo.phd.MrNullActivity;
 import org.tensorflow.demo.phd.MrThreadedDemoDetectorActivity;
 import org.tensorflow.demo.phd.MrThreadedDetectorActivity;
@@ -57,6 +59,8 @@ public class MainActivity extends Activity {
 
     private SingletonAppList singletonAppList;
 
+    private ObjectReferenceList objectReferenceList;
+
     private TextView textView;
     private EditText numberText;
     private EditText urlStringView;
@@ -71,9 +75,10 @@ public class MainActivity extends Activity {
     private boolean Threading = false;
     private boolean FixedApps = false;
     private String remoteUrl = null;
-    private int inputSize = 300;
+    private int inputSize = 500;
 
-    public final String firstMessage = "Generate App list first";
+    public final String firstMessage = "Generate App list first.";
+    public final String firstMessageDemo= "Initialize object references first.";
 
     static {
         LOGGER.i("DataGatheringAverage, Image, Number of Apps, Frame Size, " +
@@ -91,7 +96,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState){
         LOGGER.d("onCreate " + this);
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main_demo);
 
         initialize(); //Initializes the views
 
@@ -125,7 +130,10 @@ public class MainActivity extends Activity {
     }
 
     private void initialize() {
+
+/*
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+
         logFile = "log-" + timestamp.toString() + ".txt";
 
         try {
@@ -138,6 +146,7 @@ public class MainActivity extends Activity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+*/
 
         textView = (TextView) findViewById(R.id.generate_textView);
         numberText = (EditText) findViewById(R.id.number_of_apps);
@@ -148,6 +157,7 @@ public class MainActivity extends Activity {
         fixedAppsSwitch = (Switch) findViewById(R.id.fixed_apps_toggle);
         networkSwitch = (Switch) findViewById(R.id.network_toggle);
         singletonAppList = SingletonAppList.getInstance();
+        objectReferenceList = ObjectReferenceList.getInstance();
     }
 
     public void generateAppList(View view){
@@ -231,6 +241,23 @@ public class MainActivity extends Activity {
 
     }
 
+    private boolean checkListDemo(){
+
+/*
+        String captureSizeViewText = captureSizeView.getText().toString();
+        if (captureSizeViewText.isEmpty()) inputSize = 300;
+        else inputSize = Integer.valueOf(captureSizeViewText);
+*/
+
+        if (objectReferenceList.getList().isEmpty()) {
+            writeToTextView(firstMessageDemo);
+            return false;
+        }
+
+        return true;
+
+    }
+
     private void writeToTextView(final String message){
 
         runOnUiThread(new Runnable() {
@@ -291,7 +318,6 @@ public class MainActivity extends Activity {
 
     }
 
-
     public void mrNullIntent(View view){
 
         //if (!checkList()) return;
@@ -341,6 +367,26 @@ public class MainActivity extends Activity {
         detectorIntent.putExtra("RemoteURL",remoteUrl);
         detectorIntent.putExtra("InputSize", inputSize);
         detectorIntent.putExtra("FastDebug", FastDebug);
+        startActivity(detectorIntent);
+
+    }
+
+    public void mrDemoDetectionIntent(View view){
+
+        if (!checkListDemo()) return;
+
+        Intent detectorIntent = new Intent(this, MrDetectorActivity.class);
+        detectorIntent.putExtra("InputSize", inputSize);
+        detectorIntent.putExtra("FastDebug", FastDebug);
+        startActivity(detectorIntent);
+
+    }
+
+    public void mrDemoInitializeIntent(View view){
+
+        Intent detectorIntent = new Intent(this, MrInitializeDemoDetectorActivity.class);
+        //detectorIntent.putExtra("InputSize", inputSize);
+        //detectorIntent.putExtra("FastDebug", FastDebug);
         startActivity(detectorIntent);
 
     }
