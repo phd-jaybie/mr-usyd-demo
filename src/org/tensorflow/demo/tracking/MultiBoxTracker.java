@@ -378,6 +378,8 @@ public class MultiBoxTracker {
         int locH = (int) location.height()/2;
 
         logger.i("%d, FrameW: %d, FrameH: %d", timestamp, frame.getWidth(), frame.getHeight());
+        logger.i("%d, Object: %s, RectFL: %d, RectFT: %d, RectFR: %d, RectFB: %d",
+                timestamp, recognition.title, location.left, location.top, location.right, location.bottom);
         logger.i("%d, Object: %s, RectFX: %d, RectFY: %d, RectFW: %d, RectFH: %d",
                 timestamp, recognition.title, locX, locY, locW, locH);
 

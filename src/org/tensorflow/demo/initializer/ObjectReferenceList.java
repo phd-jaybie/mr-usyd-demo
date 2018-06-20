@@ -1,6 +1,7 @@
 package org.tensorflow.demo.initializer;
 
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.SystemClock;
 import android.util.Pair;
@@ -70,7 +71,7 @@ public class ObjectReferenceList {
 
     public void add(Bitmap inputFrame, String title, RectF location) {
 
-        int locX = (int) location.centerX();
+/*        int locX = (int) location.centerX();
         int locY = (int) location.centerY();
         int locW = (int) location.width()/2;
         int locH = (int) location.height()/2;
@@ -78,9 +79,16 @@ public class ObjectReferenceList {
         if ((locX + locW > inputFrame.getWidth())
                 || (locY + locH > inputFrame.getHeight())
                 || locX < 0
-                || locY < 0) return;
+                || locY < 0) return;*/
 
-        final Bitmap referenceImage = Bitmap.createBitmap(inputFrame, locX, locY, locW, locH);
+        Rect roundedLocation = new Rect();
+        location.round(roundedLocation);
+
+        final Bitmap referenceImage = Bitmap.createBitmap(inputFrame,
+                roundedLocation.left,
+                roundedLocation.top,
+                roundedLocation.right - roundedLocation.left,
+                roundedLocation.bottom - roundedLocation.top);
 
         if (!list.isEmpty()) {
             for (final ReferenceObject listedObject: list){
