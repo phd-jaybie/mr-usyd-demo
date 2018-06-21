@@ -160,13 +160,22 @@ public class ObjectReferenceList {
     }
 
     public boolean isSensitive(String targetTitle, Bitmap target) {
+
         for (final ReferenceObject listedObject: list) {
-            if (listedObject.getSensitivity())
-                if (listedObject.getTitle().equals(targetTitle))
-                    if (objectMatcher(listedObject.getReferenceImage(), target)) return true;
+            if ((listedObject.getTitle().equals(targetTitle)) && (listedObject.getSensitivity()))
+                if (objectMatcher(listedObject.getReferenceImage(), target)) return true;
         }
 
         return false;
     }
 
+    public boolean isSensitive(String targetTitle) {
+
+        for (final ReferenceObject listedObject: list) {
+            if ((listedObject.getTitle().equals(targetTitle)) && (listedObject.getSensitivity()))
+                return true;
+        }
+
+        return false;
+    }
 }

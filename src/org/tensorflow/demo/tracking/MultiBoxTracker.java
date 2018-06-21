@@ -78,6 +78,7 @@ import static org.tensorflow.demo.MrCameraActivity.MIN_MATCH_COUNT;
  * A tracker wrapping ObjectTracker that also handles non-max suppression and matching existing
  * objects to new detections.
  */
+
 public class MultiBoxTracker {
 
   int minMatchCount = Math.round(MIN_MATCH_COUNT*10/30);
@@ -262,6 +263,8 @@ public class MultiBoxTracker {
 
       final float cornerSize = Math.min(trackedPos.width(), trackedPos.height()) / 8.0f;
 
+      logger.i("Drawer: %s, Sensitivity is %s", recognition.title, String.valueOf(recognition.sensitivity));
+
       if (recognition.sensitivity) {
 
         // expanded the destination Rect to prevent leaks
@@ -295,6 +298,31 @@ public class MultiBoxTracker {
         borderedText.drawText(canvas, trackedPos.left + cornerSize, trackedPos.bottom, labelString);
       }
     }
+  }
+
+  private void refreshTrackedObjects(Bitmap frame){
+
+    Iterator<TrackedRecognition> iterator = trackedObjects.iterator();
+
+    while (iterator.hasNext()) {
+      TrackedRecognition recognition = iterator.next();
+      if (SystemClock.uptimeMillis() - recognition.lastUpdate > TRACKING_TIMEOUT) {
+        iterator.remove();
+        // Remove tracked objects if last update was more than a second ago.
+        continue;
+      }
+
+      Rect roundedLocation = new Rect();
+      recognition.location.round(roundedLocation);
+
+      try {
+        recognition.sensitivity = objectReferenceList.isSensitive(recognition.title);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+
+    }
+
   }
 
   private boolean initialized = false;
@@ -365,6 +393,8 @@ public class MultiBoxTracker {
       return;
     }
 
+    refreshTrackedObjects(frame);
+
     if (!initialized) {
       cvTrackedObjects.clear();
 
@@ -379,6 +409,7 @@ public class MultiBoxTracker {
         Rect roundedLocation = new Rect();
         location.round(roundedLocation);
 
+/*
         logger.i("%d, FrameW: %d, FrameH: %d", timestamp, frame.getWidth(), frame.getHeight());
 
         logger.i("%d, Object: %s, RectFL: %f, RectFT: %f, RectFR: %f, RectFB: %f",
@@ -391,6 +422,7 @@ public class MultiBoxTracker {
                 roundedLocation.right - roundedLocation.left,
                 roundedLocation.bottom - roundedLocation.top
         );
+*/
 
         final Bitmap refImage = Bitmap.createBitmap(frame,
                 Math.abs(roundedLocation.left),
@@ -413,6 +445,7 @@ public class MultiBoxTracker {
         cvTrackedRecognition.title = recognition.title;
         cvTrackedRecognition.RefImageMat = currentFrame;
         cvTrackedRecognition.trackedRecognition.coverColor = coverColor;
+
 
         cvTrackedObjects.add(cvTrackedRecognition);
       }
@@ -461,33 +494,6 @@ public class MultiBoxTracker {
       }
     }*/
 
-    Iterator<TrackedRecognition> iterator = trackedObjects.iterator();
-
-    while (iterator.hasNext()) {
-      TrackedRecognition recognition = iterator.next();
-      if (SystemClock.uptimeMillis() - recognition.lastUpdate > TRACKING_TIMEOUT) {
-        iterator.remove();
-        // Remove tracked objects if last update was more than a second ago.
-        continue;
-      }
-      Rect roundedLocation = new Rect();
-      recognition.location.round(roundedLocation);
-
-      try {
-        recognition.sensitivity = objectReferenceList.isSensitive(
-                recognition.title, Bitmap.createBitmap(frame,
-                        Math.abs(roundedLocation.left),
-                        Math.abs(roundedLocation.top),
-                        Math.min( (roundedLocation.right - roundedLocation.left),
-                                (frame.getWidth()-Math.abs(roundedLocation.left)) ),
-                        Math.min( (roundedLocation.bottom - roundedLocation.top),
-                                (frame.getHeight()-Math.abs(roundedLocation.top)) ))
-        );
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-
-    }
     //trackedObjects.clear(); // Does not have to be cleared everytime.
 
     long start = System.currentTimeMillis();
@@ -808,6 +814,7 @@ public class MultiBoxTracker {
         trackedRecognition.title = potential.second.getTitle();
         trackedRecognition.color = COLORS[trackedObjects.size()];
         trackedRecognition.lastUpdate = SystemClock.uptimeMillis();
+        trackedRecognition.sensitivity = objectReferenceList.isSensitive(trackedRecognition.title);
 
         trackedObjects.add(trackedRecognition);
 
@@ -815,6 +822,7 @@ public class MultiBoxTracker {
           break;
         }
       }
+
       return;
     }
 

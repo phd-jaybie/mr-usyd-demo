@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -231,16 +232,26 @@ public class MainActivity extends Activity {
             ViewHolder holder = (ViewHolder) rowView.getTag();
             ReferenceObject object = list.get(position);
 
-            String description;
-            if (object.getSensitivity()) description =  object.getTitle() + ", sensitive";
-            else description =  object.getTitle() + ", not sensitive";
+            if (object.getSensitivity()) {
+                String description =  object.getTitle() + ", sensitive";
+                holder.text.setText(description);
+                holder.text.setTextColor(Color.RED);
+            } else {
+                String description =  object.getTitle() + ", not sensitive";
+                holder.text.setText(description);
+                holder.text.setTextColor(Color.DKGRAY);
+            }
 
-            holder.text.setText(description);
+            Matrix matrix = new Matrix();
+            matrix.postRotate(90);
 
-            holder.image.setImageBitmap(Bitmap.createScaledBitmap(object.getReferenceImage(),
-                            100,
-                            100,
-                            false)
+            Bitmap listImage = Bitmap.createScaledBitmap(object.getReferenceImage(),
+                    100, 100, false);
+
+            holder.image.setImageBitmap(Bitmap.createBitmap(listImage,
+                    0,0,
+                    listImage.getWidth(), listImage.getHeight(),
+                    matrix, true)
             );
 
             return rowView;
