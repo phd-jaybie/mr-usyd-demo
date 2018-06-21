@@ -46,21 +46,6 @@ public class ObjectReferenceList {
 
     private List<ReferenceObject> list = new ArrayList<>();
 
-    private class ReferenceObject {
-        Bitmap referenceImage;
-        String title;
-
-        ReferenceObject(Bitmap referenceImage, String title){
-            this.referenceImage = referenceImage;
-            this.title = title;
-        }
-
-        ReferenceObject(ReferenceObject object){
-            this.referenceImage = object.referenceImage;
-            this.title = object.title;
-        }
-    }
-
     public static ObjectReferenceList getInstance() {
         return instance;
     }
@@ -84,11 +69,19 @@ public class ObjectReferenceList {
         Rect roundedLocation = new Rect();
         location.round(roundedLocation);
 
+        /**
+         *  The Math.min operators make sure that x + w <= bitmap.width,
+         *  and y + h <= bitmap.height in the createBitmap operation.
+         */
+
         final Bitmap referenceImage = Bitmap.createBitmap(inputFrame,
-                roundedLocation.left,
-                roundedLocation.top,
-                roundedLocation.right - roundedLocation.left,
-                roundedLocation.bottom - roundedLocation.top);
+                Math.abs(roundedLocation.left),
+                Math.abs(roundedLocation.top),
+                Math.min( (roundedLocation.right - roundedLocation.left),
+                        (inputFrame.getWidth()-Math.abs(roundedLocation.left)) ),
+                Math.min( (roundedLocation.bottom - roundedLocation.top),
+                        (inputFrame.getHeight()-Math.abs(roundedLocation.top)) )
+        );
 
         if (!list.isEmpty()) {
             for (final ReferenceObject listedObject: list){
@@ -96,8 +89,8 @@ public class ObjectReferenceList {
                  * If there is a match to an existing object on the list,
                  * stop checking, don't add to list, and, then, return.
                  */
-                if (listedObject.title.equals(title))
-                    if (objectMatcher(listedObject.referenceImage, referenceImage)) return;
+                if (listedObject.getTitle().equals(title))
+                    if (objectMatcher(listedObject.getReferenceImage(), referenceImage)) return;
             }
         }
 
@@ -109,11 +102,11 @@ public class ObjectReferenceList {
         list.add(new ReferenceObject(object));
     }
 
-    public void refreshList(){
+/*    public void refreshList(){
         for (final ReferenceObject object: list){
             // do something
         }
-    }
+    }*/
 
     private boolean objectMatcher(Bitmap listedReference, Bitmap freshDetection){
 
@@ -164,6 +157,16 @@ public class ObjectReferenceList {
         if (good_matches.size() > MIN_MATCH_COUNT) return true;
         else return false;
 
+    }
+
+    public boolean isSensitive(String targetTitle, Bitmap target) {
+        for (final ReferenceObject listedObject: list) {
+            if (listedObject.getSensitivity())
+                if (listedObject.getTitle().equals(targetTitle))
+                    if (objectMatcher(listedObject.getReferenceImage(), target)) return true;
+        }
+
+        return false;
     }
 
 }

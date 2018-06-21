@@ -15,6 +15,7 @@ import java.util.List;
 
 
 public class GlobalTrackedObjectsList {
+
     private static final GlobalTrackedObjectsList instance = new GlobalTrackedObjectsList();
 
     // Private constructor prevents instantiation from other classes

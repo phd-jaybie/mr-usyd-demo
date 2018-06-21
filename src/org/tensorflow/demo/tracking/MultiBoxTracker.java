@@ -70,6 +70,7 @@ import org.tensorflow.demo.R;
 import org.tensorflow.demo.env.BorderedText;
 import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.env.Logger;
+import org.tensorflow.demo.initializer.ObjectReferenceList;
 
 import static org.tensorflow.demo.MrCameraActivity.MIN_MATCH_COUNT;
 
@@ -132,6 +133,7 @@ public class MultiBoxTracker {
     String title;
     long lastUpdate;
     int coverColor;
+    boolean sensitivity = false;
   }
 
   private final List<TrackedRecognition> trackedObjects = new LinkedList<TrackedRecognition>();
@@ -161,7 +163,9 @@ public class MultiBoxTracker {
   private int sensorOrientation;
   private Context context;
 
-  private Resources res;
+  private static ObjectReferenceList objectReferenceList = ObjectReferenceList.getInstance();
+
+  private static Resources res;
 
   public MultiBoxTracker(final Context context) {
     this.context = context;
@@ -258,7 +262,7 @@ public class MultiBoxTracker {
 
       final float cornerSize = Math.min(trackedPos.width(), trackedPos.height()) / 8.0f;
 
-      if (Arrays.asList(sensitiveObjects).contains(recognition.title)) {
+      if (recognition.sensitivity) {
 
         // expanded the destination Rect to prevent leaks
         final RectF secretPos = new RectF(
@@ -334,8 +338,8 @@ public class MultiBoxTracker {
     objectTracker.nextFrame(frame, null, timestamp, null, true);
 
     // Clean up any objects not worth tracking any more.
-    final LinkedList<TrackedRecognition> copyList =
-        new LinkedList<TrackedRecognition>(trackedObjects);
+    final LinkedList<TrackedRecognition> copyList = new LinkedList<>(trackedObjects);
+
     for (final TrackedRecognition recognition : copyList) {
       final ObjectTracker.TrackedObject trackedObject = recognition.trackedObject;
       final float correlation = trackedObject.getCurrentCorrelation();
@@ -376,20 +380,24 @@ public class MultiBoxTracker {
         location.round(roundedLocation);
 
         logger.i("%d, FrameW: %d, FrameH: %d", timestamp, frame.getWidth(), frame.getHeight());
-        logger.i("%d, Object: %s, RectFL: %d, RectFT: %d, RectFR: %d, RectFB: %d",
+
+        logger.i("%d, Object: %s, RectFL: %f, RectFT: %f, RectFR: %f, RectFB: %f",
                 timestamp, recognition.title, location.left, location.top, location.right, location.bottom);
+
         logger.i("%d, Object: %s, RectFX: %d, RectFY: %d, RectFW: %d, RectFH: %d",
                 timestamp, recognition.title,
                 roundedLocation.left,
                 roundedLocation.top,
                 roundedLocation.right - roundedLocation.left,
-                roundedLocation.bottom - roundedLocation.top);
+                roundedLocation.bottom - roundedLocation.top
+        );
 
         final Bitmap refImage = Bitmap.createBitmap(frame,
-                roundedLocation.left,
-                roundedLocation.top,
-                roundedLocation.right - roundedLocation.left,
-                roundedLocation.bottom - roundedLocation.top);
+                Math.abs(roundedLocation.left),
+                Math.abs(roundedLocation.top),
+                Math.min((roundedLocation.right - roundedLocation.left),(frame.getWidth()-Math.abs(roundedLocation.left))),
+                Math.min((roundedLocation.bottom - roundedLocation.top),(frame.getHeight()-Math.abs(roundedLocation.top)))
+        );
 
         Utils.bitmapToMat(refImage, currentFrame);
         logger.i("%d, MatW: %d, MatH: %d",
@@ -460,7 +468,25 @@ public class MultiBoxTracker {
       if (SystemClock.uptimeMillis() - recognition.lastUpdate > TRACKING_TIMEOUT) {
         iterator.remove();
         // Remove tracked objects if last update was more than a second ago.
+        continue;
       }
+      Rect roundedLocation = new Rect();
+      recognition.location.round(roundedLocation);
+
+      try {
+        recognition.sensitivity = objectReferenceList.isSensitive(
+                recognition.title, Bitmap.createBitmap(frame,
+                        Math.abs(roundedLocation.left),
+                        Math.abs(roundedLocation.top),
+                        Math.min( (roundedLocation.right - roundedLocation.left),
+                                (frame.getWidth()-Math.abs(roundedLocation.left)) ),
+                        Math.min( (roundedLocation.bottom - roundedLocation.top),
+                                (frame.getHeight()-Math.abs(roundedLocation.top)) ))
+        );
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+
     }
     //trackedObjects.clear(); // Does not have to be cleared everytime.
 

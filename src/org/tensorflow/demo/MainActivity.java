@@ -6,20 +6,28 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.Switch;
 import android.widget.TextView;
 
 import org.opencv.android.OpenCVLoader;
 import org.tensorflow.demo.env.Logger;
 import org.tensorflow.demo.initializer.ObjectReferenceList;
+import org.tensorflow.demo.initializer.ReferenceObject;
 import org.tensorflow.demo.phd.MrDetectorActivity;
 import org.tensorflow.demo.phd.MrInitializeDemoDetectorActivity;
 import org.tensorflow.demo.phd.MrNullActivity;
@@ -37,6 +45,7 @@ import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -65,6 +74,7 @@ public class MainActivity extends Activity {
     private EditText numberText;
     private EditText urlStringView;
     private EditText captureSizeView;
+    private ListView listview;
     private Switch debugSwitch; // This switch just tells the processing activities if captures are limited or not.
     private Switch threadSwitch; // This switch just tells the processing activities if threaded or not.
     private Switch fixedAppsSwitch; // This switch just tells the app randomizer to create a fixed set of apps.
@@ -158,6 +168,84 @@ public class MainActivity extends Activity {
         networkSwitch = (Switch) findViewById(R.id.network_toggle);
         singletonAppList = SingletonAppList.getInstance();
         objectReferenceList = ObjectReferenceList.getInstance();
+
+        listview = (ListView) findViewById(R.id.listview);
+
+        final ArrayList<ReferenceObject> list = new ArrayList<>(objectReferenceList.getList());
+
+        if (!list.isEmpty()) {
+
+            final StableArrayAdapter adapter =
+                    new StableArrayAdapter(this, R.layout.list_object, list);
+            listview.setAdapter(adapter);
+
+            listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+                @Override
+                public void onItemClick(AdapterView<?> parent, final View view,
+                                        int position, long id) {
+
+                    ReferenceObject object = list.get(position);
+                    object.toggleSensitivity();
+                    list.set(position,object);
+                    adapter.notifyDataSetChanged();
+                    view.setAlpha(1);
+                }
+
+            });
+        }
+    }
+
+    private class StableArrayAdapter extends ArrayAdapter<ReferenceObject> {
+
+        private final Context context;
+        private final List<ReferenceObject> list;
+
+        class ViewHolder {
+            public TextView text;
+            public ImageView image;
+        }
+
+        public StableArrayAdapter(Context context, int textViewResourceId,
+                                  List<ReferenceObject> objects) {
+            super(context, textViewResourceId, objects);
+            this.context = context;
+            this.list = objects;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            View rowView = convertView;
+            // reuse views
+            if (rowView == null) {
+                rowView = getLayoutInflater().inflate(R.layout.list_object, null);
+                // configure view holder
+                ViewHolder viewHolder = new ViewHolder();
+                viewHolder.text = (TextView) rowView.findViewById(R.id.title);
+                viewHolder.image = (ImageView) rowView
+                        .findViewById(R.id.icon);
+                rowView.setTag(viewHolder);
+            }
+
+            // fill data
+            ViewHolder holder = (ViewHolder) rowView.getTag();
+            ReferenceObject object = list.get(position);
+
+            String description;
+            if (object.getSensitivity()) description =  object.getTitle() + ", sensitive";
+            else description =  object.getTitle() + ", not sensitive";
+
+            holder.text.setText(description);
+
+            holder.image.setImageBitmap(Bitmap.createScaledBitmap(object.getReferenceImage(),
+                            100,
+                            100,
+                            false)
+            );
+
+            return rowView;
+        }
+
     }
 
     public void generateAppList(View view){

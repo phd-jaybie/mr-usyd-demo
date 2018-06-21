@@ -527,6 +527,7 @@ public class MrInitializeDemoDetectorActivity extends MrCameraActivity implement
 
                                             objectReferenceList.add(rgbFrameBitmap,dResult.getTitle(),location);
 
+
                                             //localHit = 1;
 
                                         }
