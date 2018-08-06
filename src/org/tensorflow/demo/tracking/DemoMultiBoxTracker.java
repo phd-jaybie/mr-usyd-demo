@@ -18,7 +18,6 @@ package org.tensorflow.demo.tracking;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -34,20 +33,9 @@ import android.util.Pair;
 import android.util.TypedValue;
 import android.widget.Toast;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Vector;
-
 import org.opencv.android.Utils;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
-import org.opencv.core.CvException;
 import org.opencv.core.CvType;
 import org.opencv.core.DMatch;
 import org.opencv.core.Mat;
@@ -58,19 +46,23 @@ import org.opencv.core.MatOfKeyPoint;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
-import org.opencv.core.Rect2d;
 import org.opencv.features2d.DescriptorMatcher;
 import org.opencv.features2d.ORB;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.tracking.Tracker;
-import org.opencv.tracking.TrackerMIL;
 import org.opencv.video.Video;
 import org.tensorflow.demo.Classifier.Recognition;
-import org.tensorflow.demo.R;
 import org.tensorflow.demo.env.BorderedText;
 import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.env.Logger;
 import org.tensorflow.demo.initializer.ObjectReferenceList;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.Vector;
 
 import static org.tensorflow.demo.MrCameraActivity.MIN_MATCH_COUNT;
 
@@ -79,7 +71,7 @@ import static org.tensorflow.demo.MrCameraActivity.MIN_MATCH_COUNT;
  * objects to new detections.
  */
 
-public class MultiBoxTracker {
+public class DemoMultiBoxTracker {
 
   int minMatchCount = Math.round(MIN_MATCH_COUNT*10/30);
 
@@ -168,7 +160,7 @@ public class MultiBoxTracker {
 
   private static Resources res;
 
-  public MultiBoxTracker(final Context context) {
+  public DemoMultiBoxTracker(final Context context) {
     this.context = context;
     for (final int color : COLORS) {
       availableColors.add(color);
@@ -281,7 +273,7 @@ public class MultiBoxTracker {
                 boxPaint);*/
 
         Paint fillPaint = new Paint();
-        fillPaint.setStyle(Paint.Style.FILL);
+        fillPaint.setStyle(Style.FILL);
         fillPaint.setColor(recognition.coverColor);
 
         //float cornerSize = Math.min(secretPos.width(), secretPos.height()) / 16.0f;
@@ -393,6 +385,7 @@ public class MultiBoxTracker {
       return;
     }
 
+    // Update time and sensitivity, i.e. check for timeouts
     refreshTrackedObjects(frame);
 
     if (!initialized) {
@@ -401,6 +394,11 @@ public class MultiBoxTracker {
       logger.i("%d, Initializing CVTracker: %dx%d", timestamp, w, h);
 
       for (final TrackedRecognition recognition: trackedObjects) {
+
+        if (recognition.title.contains("Marker")) {
+          // Should I add it to the CvTracked objects immediately?
+          continue;
+        }
 
         CvTrackedRecognition cvTrackedRecognition = new CvTrackedRecognition();
         Mat currentFrame = new Mat();
@@ -469,29 +467,29 @@ public class MultiBoxTracker {
 
     //Mat flow = calcOpticalFlow(prevFrame, frame);
 
-/*    Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-    try {
-      Utils.matToBitmap(flow, bmp);
-    } catch (CvException e) {
-      logger.d("CV Exception",e.getMessage());
-    }
-
-    FileOutputStream out = null;
-    try {
-      out = new FileOutputStream("flow.png");
-      bmp.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
-      // PNG is a lossless format, the compression factor (100) is ignored
-    } catch (Exception e) {
-      e.printStackTrace();
-    } finally {
-      try {
-        if (out != null) {
-          out.close();
-        }
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }*/
+//    Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+//    try {
+//      Utils.matToBitmap(flow, bmp);
+//    } catch (CvException e) {
+//      logger.d("CV Exception",e.getMessage());
+//    }
+//
+//    FileOutputStream out = null;
+//    try {
+//      out = new FileOutputStream("flow.png");
+//      bmp.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
+//      // PNG is a lossless format, the compression factor (100) is ignored
+//    } catch (Exception e) {
+//      e.printStackTrace();
+//    } finally {
+//      try {
+//        if (out != null) {
+//          out.close();
+//        }
+//      } catch (IOException e) {
+//        e.printStackTrace();
+//      }
+//    }
 
     //trackedObjects.clear(); // Does not have to be cleared everytime.
 
@@ -499,6 +497,7 @@ public class MultiBoxTracker {
 
     List<Pair<Mat, TrackedRecognition>> refImageMats = new ArrayList<>();
 
+    // All TF tracked objects are tracked using ORB while no new
     for (final CvTrackedRecognition cvTrackedRecognition: cvTrackedObjects){
       logger.i("Tracking object: " + cvTrackedRecognition.title);
 
@@ -519,21 +518,19 @@ public class MultiBoxTracker {
     //objectTracker.nextFrame(frame, null, timestamp, null, true);
 
     // Clean up any objects not worth tracking any more.
-/*
-    final LinkedList<TrackedRecognition> copyList =
-            new LinkedList<TrackedRecognition>(trackedObjects);
-    for (final TrackedRecognition recognition : copyList) {
-      final ObjectTracker.TrackedObject trackedObject = recognition.trackedObject;
-      final float correlation = trackedObject.getCurrentCorrelation();
-      if (correlation < MIN_CORRELATION) {
-        logger.v("Removing tracked object %s because NCC is %.2f", trackedObject, correlation);
-        trackedObject.stopTracking();
-        trackedObjects.remove(recognition);
-
-        availableColors.add(recognition.color);
-      }
-    }
-*/
+//    final LinkedList<TrackedRecognition> copyList =
+//            new LinkedList<TrackedRecognition>(trackedObjects);
+//    for (final TrackedRecognition recognition : copyList) {
+//      final ObjectTracker.TrackedObject trackedObject = recognition.trackedObject;
+//      final float correlation = trackedObject.getCurrentCorrelation();
+//      if (correlation < MIN_CORRELATION) {
+//        logger.v("Removing tracked object %s because NCC is %.2f", trackedObject, correlation);
+//        trackedObject.stopTracking();
+//        trackedObjects.remove(recognition);
+//
+//        availableColors.add(recognition.color);
+//      }
+//    }
   }
 
   private Mat histogram(Bitmap bitmap){
@@ -653,8 +650,8 @@ public class MultiBoxTracker {
            * using ransac */
           /** Also, always remember that this is already a transformation process. */
 
-          List<org.opencv.core.Point> refPoints = new ArrayList<>();
-          List<org.opencv.core.Point> mPoints = new ArrayList<>();
+          List<Point> refPoints = new ArrayList<>();
+          List<Point> mPoints = new ArrayList<>();
           for(int i = 0; i<good_matches.size(); i++){
             refPoints.add(refKeypoints.toList().get(good_matches.get(i).queryIdx).pt);
             mPoints.add(qryKeypoints.toList().get(good_matches.get(i).trainIdx).pt);
@@ -682,7 +679,7 @@ public class MultiBoxTracker {
 
           MatOfPoint sceneCorners = new MatOfPoint();
           for (int i=0; i < scene_corners.rows(); i++) {
-            org.opencv.core.Point point = new org.opencv.core.Point();
+            Point point = new Point();
             point.set(scene_corners.get(i,0));
             points.add(point);
           }
@@ -811,15 +808,15 @@ public class MultiBoxTracker {
 
         final TrackedRecognition trackedRecognition = new TrackedRecognition();
 
-        // Separate handling for Marker detection
+        // Separate handling for results from Marker detection
         if (potential.second.getId() == "Marker") {
           trackedRecognition.detectionConfidence = potential.first;
           trackedRecognition.location = new RectF(potential.second.getLocation());
           trackedRecognition.trackedObject = null;
-          trackedRecognition.title = potential.second.getTitle();
+          trackedRecognition.title = potential.second.getId() + potential.second.getTitle();
           trackedRecognition.color = COLORS[trackedObjects.size()];
-          trackedRecognition.lastUpdate = SystemClock.uptimeMillis();
-          trackedRecognition.sensitivity = objectReferenceList.isSensitive(trackedRecognition.title);
+          //trackedRecognition.lastUpdate = SystemClock.uptimeMillis();
+          //trackedRecognition.sensitivity = false;
 
           trackedObjects.add(trackedRecognition);
           continue;

@@ -1,10 +1,9 @@
-package org.tensorflow.demo.phd;
+package org.tensorflow.demo.phd.abstraction;
 
 import android.util.Xml;
 
 import org.tensorflow.demo.Classifier;
 import org.tensorflow.demo.network.NetworkFragment;
-import org.tensorflow.demo.network.NetworkListener;
 import org.tensorflow.demo.network.XmlOperator;
 import org.tensorflow.demo.phd.detector.cv.CvDetector;
 import org.tensorflow.demo.simulator.App;

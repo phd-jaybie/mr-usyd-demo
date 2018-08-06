@@ -17,7 +17,6 @@
 package org.tensorflow.demo;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -43,9 +42,7 @@ import android.view.Surface;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import java.io.File;
 import java.io.FileWriter;
-import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -56,7 +53,7 @@ import org.tensorflow.demo.initializer.ObjectReferenceList;
 import org.tensorflow.demo.network.NetworkFragment;
 import org.tensorflow.demo.network.NetworkListener;
 import org.tensorflow.demo.network.XmlOperator;
-import org.tensorflow.demo.phd.MrObjectManager;
+import org.tensorflow.demo.phd.abstraction.MrObjectManager;
 import org.tensorflow.demo.simulator.App;
 import org.tensorflow.demo.simulator.AppRandomizer;
 import org.tensorflow.demo.simulator.Randomizer;
@@ -359,6 +356,7 @@ public abstract class MrCameraActivity extends FragmentActivity
           };
 
       if (appList != null) processImage();
+
     } catch (final Exception e) {
       LOGGER.e(e, "Exception!");
       Trace.endSection();

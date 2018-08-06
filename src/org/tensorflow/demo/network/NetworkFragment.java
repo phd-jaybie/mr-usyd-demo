@@ -1,7 +1,6 @@
 package org.tensorflow.demo.network;
 
 import android.content.res.AssetManager;
-import android.graphics.Bitmap;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.content.Context;
@@ -11,7 +10,7 @@ import android.support.annotation.Nullable;
 
 
 import org.tensorflow.demo.env.Logger;
-import org.tensorflow.demo.phd.MrObjectManager;
+import org.tensorflow.demo.phd.abstraction.MrObjectManager;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;

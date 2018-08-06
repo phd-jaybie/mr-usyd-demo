@@ -2,7 +2,7 @@ package org.tensorflow.demo;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.ProgressDialog;
+import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -14,7 +14,6 @@ import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -29,24 +28,20 @@ import org.opencv.android.OpenCVLoader;
 import org.tensorflow.demo.env.Logger;
 import org.tensorflow.demo.initializer.ObjectReferenceList;
 import org.tensorflow.demo.initializer.ReferenceObject;
+import org.tensorflow.demo.phd.MrDemoDetectorActivity;
 import org.tensorflow.demo.phd.MrDetectorActivity;
 import org.tensorflow.demo.phd.MrInitializeDemoDetectorActivity;
 import org.tensorflow.demo.phd.MrNullActivity;
-import org.tensorflow.demo.phd.MrThreadedDemoDetectorActivity;
-import org.tensorflow.demo.phd.MrThreadedDetectorActivity;
-import org.tensorflow.demo.phd.ProtectedMrDetectorActivity;
-import org.tensorflow.demo.phd.ProtectedMrDetectorActivityWithNetwork;
+import org.tensorflow.demo.phd.threaded.MrThreadedDemoDetectorActivity;
+import org.tensorflow.demo.phd.abstraction.ProtectedMrDetectorActivity;
+import org.tensorflow.demo.phd.abstraction.ProtectedMrDetectorActivityWithNetwork;
 import org.tensorflow.demo.simulator.App;
 import org.tensorflow.demo.simulator.AppRandomizer;
 import org.tensorflow.demo.simulator.Randomizer;
 import org.tensorflow.demo.simulator.SingletonAppList;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.PrintWriter;
-import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -91,6 +86,9 @@ public class MainActivity extends Activity {
     public final String firstMessage = "Generate App list first.";
     public final String firstMessageDemo= "Initialize object references first.";
 
+    private static TaskStackBuilder backStack;
+
+
     static {
         LOGGER.i("DataGatheringAverage, Image, Number of Apps, Frame Size, " +
                 "Overall Frame Processing (ms), Detection Time (ms), " +
@@ -119,6 +117,7 @@ public class MainActivity extends Activity {
         } else {
             noConnection();
         }*/
+        backStack = TaskStackBuilder.create(this);
 
     }
 
@@ -424,7 +423,10 @@ public class MainActivity extends Activity {
         Intent detectorIntent = new Intent(this, MrNullActivity.class);
         detectorIntent.putExtra("InputSize", inputSize);
         detectorIntent.putExtra("FastDebug", FastDebug);
-        startActivity(detectorIntent);
+
+        backStack.addNextIntentWithParentStack(detectorIntent);
+        backStack.startActivities();
+        //startActivity(detectorIntent);
 
     }
 
@@ -436,13 +438,21 @@ public class MainActivity extends Activity {
             Intent detectorIntent = new Intent(this, MrThreadedDemoDetectorActivity.class);
             detectorIntent.putExtra("InputSize", inputSize);
             detectorIntent.putExtra("FastDebug", FastDebug);
-            startActivity(detectorIntent);
+
+            //startActivity(detectorIntent);
+            backStack.addNextIntentWithParentStack(detectorIntent);
+
         } else {
             Intent detectorIntent = new Intent(this, MrDetectorActivity.class);
             detectorIntent.putExtra("InputSize", inputSize);
             detectorIntent.putExtra("FastDebug", FastDebug);
-            startActivity(detectorIntent);
+
+            //startActivity(detectorIntent);
+            backStack.addNextIntentWithParentStack(detectorIntent);
+
         }
+
+        backStack.startActivities();
 
     }
 
@@ -453,7 +463,10 @@ public class MainActivity extends Activity {
         Intent detectorIntent = new Intent(this, ProtectedMrDetectorActivity.class);
         detectorIntent.putExtra("InputSize", inputSize);
         detectorIntent.putExtra("FastDebug", FastDebug);
-        startActivity(detectorIntent);
+
+        backStack.addNextIntentWithParentStack(detectorIntent);
+        backStack.startActivities();
+        //startActivity(detectorIntent);
 
     }
 
@@ -466,7 +479,10 @@ public class MainActivity extends Activity {
         detectorIntent.putExtra("RemoteURL",remoteUrl);
         detectorIntent.putExtra("InputSize", inputSize);
         detectorIntent.putExtra("FastDebug", FastDebug);
-        startActivity(detectorIntent);
+
+        backStack.addNextIntentWithParentStack(detectorIntent);
+        backStack.startActivities();
+        //startActivity(detectorIntent);
 
     }
 
@@ -474,10 +490,13 @@ public class MainActivity extends Activity {
 
         if (!checkListDemo()) return;
 
-        Intent detectorIntent = new Intent(this, MrDetectorActivity.class);
+        Intent detectorIntent = new Intent(this, MrDemoDetectorActivity.class);
         detectorIntent.putExtra("InputSize", inputSize);
         detectorIntent.putExtra("FastDebug", FastDebug);
-        startActivity(detectorIntent);
+
+        backStack.addNextIntentWithParentStack(detectorIntent);
+        backStack.startActivities();
+        //startActivity(detectorIntent);
 
     }
 
@@ -486,7 +505,10 @@ public class MainActivity extends Activity {
         Intent detectorIntent = new Intent(this, MrInitializeDemoDetectorActivity.class);
         //detectorIntent.putExtra("InputSize", inputSize);
         //detectorIntent.putExtra("FastDebug", FastDebug);
-        startActivity(detectorIntent);
+
+        backStack.addNextIntentWithParentStack(detectorIntent);
+        backStack.startActivities();
+        //startActivity(detectorIntent);
 
     }
 

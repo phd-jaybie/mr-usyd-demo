@@ -3,7 +3,7 @@ package org.tensorflow.demo.augmenting;
 import android.graphics.Canvas;
 
 import org.tensorflow.demo.env.Logger;
-import org.tensorflow.demo.phd.MrObjectManager;
+import org.tensorflow.demo.phd.abstraction.MrObjectManager;
 
 /**
  * Created by deg032 on 1/2/18.

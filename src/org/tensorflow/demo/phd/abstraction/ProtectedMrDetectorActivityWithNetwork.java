@@ -1,4 +1,4 @@
-package org.tensorflow.demo.phd;
+package org.tensorflow.demo.phd.abstraction;
 
 /**
  * Created by deg032 on 5/2/18.
@@ -35,7 +35,6 @@ import org.tensorflow.demo.Classifier;
 import org.tensorflow.demo.OverlayView;
 import org.tensorflow.demo.OverlayView.DrawCallback;
 import org.tensorflow.demo.R;
-import org.tensorflow.demo.TensorFlowImageClassifier;
 import org.tensorflow.demo.TensorFlowMultiBoxDetector;
 import org.tensorflow.demo.TensorFlowObjectDetectionAPIModel;
 import org.tensorflow.demo.TensorFlowYoloDetector;
