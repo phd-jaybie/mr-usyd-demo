@@ -131,12 +131,14 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
     private MarkerDetector hammingDetector; // for 2D marker detection
 
     private long lastProcessingTimeMs;
+    private long markerDetectionTime;
     private Bitmap rgbFrameBitmap = null;
     private Bitmap croppedBitmap = null;
     private Bitmap cropCopyBitmap = null;
     private Bitmap inputBitmap = null;
 
     private boolean computingDetection = false;
+    private boolean markerDetected = false;
 
     private long timestamp = 0;
 
@@ -281,9 +283,9 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
                     @Override
                     public void drawCallback(final Canvas canvas) {
                         tracker.draw(canvas);
-                        if (isDebug()) {
+/*                        if (isDebug()) {
                             tracker.drawDebug(canvas);
-                        }
+                        }*/
                     }
                 });
 
@@ -296,9 +298,11 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
                 new DrawCallback() {
                     @Override
                     public void drawCallback(final Canvas canvas) {
-                        //if (!isDebug()) {
-                        //    return;
-                        //}
+
+                        if (!isDebug()) {
+                            return;
+                        }
+
                         final Bitmap copy = cropCopyBitmap;
                         if (copy == null) {
                             return;
@@ -325,13 +329,14 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
                         }
                         lines.add("");
 
+                        if (markerDetected) lines.add("2D Hamming Marker detected.");
                         lines.add("Running " + singletonAppList.getList().size() + " apps");
                         lines.add("Frame: " + previewWidth + "x" + previewHeight);
                         lines.add("Processed Frame: " + inputBitmap.getWidth() + "x" + inputBitmap.getWidth());
                         lines.add("Crop: " + copy.getWidth() + "x" + copy.getHeight());
                         lines.add("View: " + canvas.getWidth() + "x" + canvas.getHeight());
                         //lines.add("Rotation: " + sensorOrientation);
-                        lines.add("Inference time: " + lastProcessingTimeMs + "ms");
+                        lines.add("Frame processing time: " + lastProcessingTimeMs + "ms (Marker detection time: " + markerDetectionTime + ")");
 
                         borderedText.drawLines(canvas, 10, canvas.getHeight() - 10, lines);
                     }
@@ -443,8 +448,11 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
                     @Override
                     public void run() {
 
+                        // Send to tracker the reference frame for tracking.
                         tracker.setFrame(rgbFrameBitmap);
+                        markerDetected = false;
 
+                        // These canvas for cropCopyBitmap is for the debug_overlay
                         cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
                         final Canvas canvas = new Canvas(cropCopyBitmap);
                         final Paint paint = new Paint();
@@ -495,8 +503,10 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
 
                         begin = SystemClock.uptimeMillis();
                         List<Classifier.Recognition> results = detector.recognizeImage(inputBitmap); // no classifier
+                        long begin2 = SystemClock.uptimeMillis();
                         List<MarkerDetector.Marker> mResults =
                             hammingDetector.detectMarkers(inputBitmap);//rgbFrameBitmap);
+                        markerDetectionTime = SystemClock.uptimeMillis() - begin2;
                         detect1 = SystemClock.uptimeMillis()-begin;
 
                         //transformation from TF results
@@ -526,6 +536,7 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
                         for (final MarkerDetector.Marker mResult : mResults) {
 
                             localHit = 1;
+                            markerDetected = true;
 
                             Path locationPath = mResult.contourToPath();
                             locationPath.transform(inputToCropTransform);
@@ -575,9 +586,9 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
                         augmenter.trackResults(luminanceCopy, currTimestamp);
                         trackingOverlay.postInvalidate();
 
-                        requestRender();
+                        requestRender(); // This is for the debug_overlay rendering.
                         computingDetection = false;
-                        tracker.setInitialize(false);
+                        tracker.setInitialize(false); // Signaling that a new initialization has to be done at the tracker.
 
                         final long overallTime = SystemClock.uptimeMillis() - startTime;
 

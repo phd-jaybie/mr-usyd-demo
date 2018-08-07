@@ -118,8 +118,10 @@ public abstract class MrCameraActivity extends FragmentActivity
 
   private Randomizer randomizer;
 
+  // For a multi-app setup
   protected static SingletonAppList singletonAppList = SingletonAppList.getInstance();
 
+  // List of reference objects form the initialization stage.
   protected static ObjectReferenceList objectReferenceList = ObjectReferenceList.getInstance();
 
   protected static List<App> appList;

@@ -525,8 +525,8 @@ public class MrInitializeDemoDetectorActivity extends MrCameraActivity implement
                                             dResult.setLocation(location);
                                             appResults.add(dResult);
 
+                                            // Added to the reference list which will be used by actual demo detection.
                                             objectReferenceList.add(rgbFrameBitmap,dResult.getTitle(),location);
-
 
                                             //localHit = 1;
 

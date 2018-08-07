@@ -120,7 +120,7 @@ public class HammingDetector implements MarkerDetector {
 
             double contourArea = Imgproc.contourArea(contour);
             // len(contour) --> contour.toList().size() //&& contourLength<=maxContourLength)
-            if (contourArea >=  2*minContourLength*minContourLength) {
+            if (contourArea >=  4*minContourLength*minContourLength) {
                 if (contourArea > maxContourArea) {
                     maxContourArea = contourArea;
                     goodContours.add(0,contour);

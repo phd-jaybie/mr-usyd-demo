@@ -39,6 +39,7 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.DMatch;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfByte;
 import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfFloat;
 import org.opencv.core.MatOfInt;
@@ -56,6 +57,7 @@ import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.env.Logger;
 import org.tensorflow.demo.initializer.ObjectReferenceList;
 
+import java.sql.Ref;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -112,11 +114,8 @@ public class DemoMultiBoxTracker {
 
   final List<Pair<Float, RectF>> screenRects = new LinkedList<Pair<Float, RectF>>();
 
-  private Bitmap prevFrame;
-
-  public void setFrame(Bitmap bitmap){
-    prevFrame = bitmap;
-  }
+  /*// This is the reference frame for tracking.
+  private Bitmap prevFrame;*/
 
   private static class TrackedRecognition {
     ObjectTracker.TrackedObject trackedObject;
@@ -138,6 +137,20 @@ public class DemoMultiBoxTracker {
     int color;
     String title;
     Mat RefImageMat;
+
+  }
+
+  private static class RefFrame {
+      private static final RefFrame instance = new RefFrame();
+      Bitmap refFrame;
+      Mat refMat;
+      MatOfPoint refPoints;
+
+      private RefFrame(){ }
+
+      public static RefFrame getInstance() {
+          return instance;
+      }
 
   }
 
@@ -533,49 +546,235 @@ public class DemoMultiBoxTracker {
 //    }
   }
 
-  private Mat histogram(Bitmap bitmap){
 
-    Mat img = new Mat();
-    Utils.bitmapToMat(bitmap, img);
-    Imgproc.cvtColor(img, img, Imgproc.COLOR_RGB2GRAY);
+    public synchronized void HomogFrameTracker(
+            final int w,
+            final int h,
+            final int sensorOrientation,
+            final Bitmap frame,
+            final long timestamp) {
 
-    Vector<Mat> bgr_planes = new Vector<Mat>();
-    Core.split(img, bgr_planes);
+        if (trackedObjects.isEmpty()) {
+            logger.i("Nothing new to track.");
+            return;
+        }
 
-    MatOfInt histSize = new MatOfInt(256);
+        // Update time and sensitivity, i.e. check for timeouts
+        refreshTrackedObjects(frame);
 
-    final MatOfFloat histRange = new MatOfFloat(0f, 256f);
+        if (!initialized) {
+            //cvTrackedObjects.clear();
 
-    boolean accumulate = false;
-    Mat b_hist = new  Mat();
+            logger.i("%d, Initializing Homog-CV-Tracker: %dx%d", timestamp, w, h);
 
-    Imgproc.calcHist(bgr_planes, new MatOfInt(0),new Mat(), b_hist, histSize, histRange, accumulate);
-    return b_hist;
+//            for (final TrackedRecognition recognition: trackedObjects) {
+//
+//                if (recognition.title.contains("Marker")) {
+//                    // Should I add it to the CvTracked objects immediately?
+//                    continue;
+//                }
+//
+//                CvTrackedRecognition cvTrackedRecognition = new CvTrackedRecognition();
+//                //Mat currentFrame = new Mat();
+//
+//                RectF location = recognition.location;
+//                Rect roundedLocation = new Rect();
+//                location.round(roundedLocation);
+//
+//                final Bitmap refImage = Bitmap.createBitmap(frame,
+//                        Math.abs(roundedLocation.left),
+//                        Math.abs(roundedLocation.top),
+//                        Math.min((roundedLocation.right - roundedLocation.left),(frame.getWidth()-Math.abs(roundedLocation.left))),
+//                        Math.min((roundedLocation.bottom - roundedLocation.top),(frame.getHeight()-Math.abs(roundedLocation.top)))
+//                );
+//
+///*                Utils.bitmapToMat(refImage, currentFrame);
+//                logger.i("%d, MatW: %d, MatH: %d",
+//                        timestamp,
+//                        currentFrame.cols(),
+//                        currentFrame.rows());*/
+//                final int coverColor = refImage.getPixel(0, 0);
+//
+//                cvTrackedRecognition.trackedRecognition = recognition;
+//                cvTrackedRecognition.location = recognition.location;
+//                cvTrackedRecognition.color = recognition.color;
+//                cvTrackedRecognition.detectionConfidence = recognition.detectionConfidence;
+//                cvTrackedRecognition.title = recognition.title;
+//                //cvTrackedRecognition.RefImageMat = currentFrame;
+//                cvTrackedRecognition.trackedRecognition.coverColor = coverColor;
+//
+//                cvTrackedObjects.add(cvTrackedRecognition);
+//            }
 
-  }
+            frameWidth = w;
+            frameHeight = h;
+            this.sensorOrientation = sensorOrientation;
+            initialized = true;
+            return;
+        }
 
-  private Mat calcOpticalFlow(Bitmap prev, Bitmap next){
+        if (cvTrackedObjects.isEmpty()){
+            logger.i("Nothing tracked.");
+            return;
+        }
 
-    long start = SystemClock.uptimeMillis();
+        //Mat H1 = histogram(prevFrame);
+        //Mat H2 = histogram(frame);
+        //double frameSimilarity = Imgproc.compareHist(H1, H2, Imgproc.CV_COMP_BHATTACHARYYA);
 
-    Mat prevMat = new Mat();
-    Utils.bitmapToMat(prev, prevMat);
-    Imgproc.cvtColor(prevMat, prevMat, Imgproc.COLOR_RGB2GRAY);
+        //logger.i("%d: Frame Correlation: %f", timestamp,frameSimilarity);
 
-    Mat nextMat = new Mat();
-    Utils.bitmapToMat(next, nextMat);
-    Imgproc.cvtColor(nextMat, nextMat, Imgproc.COLOR_RGB2GRAY);
+        //Mat flow = calcOpticalFlow(prevFrame, frame);
 
-    Mat flow = new Mat(prevMat.size(), CvType.CV_8UC1);
+//    Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+//    try {
+//      Utils.matToBitmap(flow, bmp);
+//    } catch (CvException e) {
+//      logger.d("CV Exception",e.getMessage());
+//    }
+//
+//    FileOutputStream out = null;
+//    try {
+//      out = new FileOutputStream("flow.png");
+//      bmp.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
+//      // PNG is a lossless format, the compression factor (100) is ignored
+//    } catch (Exception e) {
+//      e.printStackTrace();
+//    } finally {
+//      try {
+//        if (out != null) {
+//          out.close();
+//        }
+//      } catch (IOException e) {
+//        e.printStackTrace();
+//      }
+//    }
 
-    Video.calcOpticalFlowFarneback(prevMat, nextMat, flow,0.5,1, 1, 1, 5,
-            1.1,1);
+        //trackedObjects.clear(); // Does not have to be cleared everytime.
 
-    logger.i("Optical Flow time: %d", SystemClock.uptimeMillis() - start);
+        long start = System.currentTimeMillis();
 
-    return flow;
+        //List<Pair<Mat, TrackedRecognition>> refImageMats = new ArrayList<>();
 
-  }
+        // All TF tracked objects are tracked using ORB while no new
+        /*for (final CvTrackedRecognition cvTrackedRecognition: cvTrackedObjects){
+            logger.i("Tracking object: " + cvTrackedRecognition.title);
+
+            refImageMats.add(new Pair<>(cvTrackedRecognition.RefImageMat,cvTrackedRecognition.trackedRecognition));
+        }*/
+
+        //orbTracker(timestamp,refImageMats, frame);
+        homogBasedTracker(timestamp, frame);
+
+/*    if (!results.isEmpty()) {
+      for (final TrackedRecognition result: results){
+        trackedObjects.add(result);
+      }
+    }*/
+
+        long end = System.currentTimeMillis() - start;
+        logger.i("CV Frame tracking time: %d", end);
+
+        //objectTracker.nextFrame(frame, null, timestamp, null, true);
+
+        // Clean up any objects not worth tracking any more.
+//    final LinkedList<TrackedRecognition> copyList =
+//            new LinkedList<TrackedRecognition>(trackedObjects);
+//    for (final TrackedRecognition recognition : copyList) {
+//      final ObjectTracker.TrackedObject trackedObject = recognition.trackedObject;
+//      final float correlation = trackedObject.getCurrentCorrelation();
+//      if (correlation < MIN_CORRELATION) {
+//        logger.v("Removing tracked object %s because NCC is %.2f", trackedObject, correlation);
+//        trackedObject.stopTracking();
+//        trackedObjects.remove(recognition);
+//
+//        availableColors.add(recognition.color);
+//      }
+//    }
+    }
+
+    /**
+     * Experimenting on Homography-based tracking instead of using orb for
+     * every reference object.
+
+     Based from these steps:
+
+     use cv2.goodFeaturesToTrack to find good corners.
+     use cv2.calcOpticalFlowPyrLK to track the corners.
+     use cv2.findHomography to compute the homography matrix.
+     use cv2.warpPerspective to transform video frame.
+
+     Here are the general steps:"
+     1. The RectF location results from the detection are kept at the beginning
+        of the tracking sequence while another detection is being done.
+     2. New frames arrive at the tracker and we compute homography transformations
+        with the last frame from the detections as reference.
+     3. The current detection locations are transformed using these frame-by-frame
+        transformations.
+
+     This approach eliminates the need for per-object tracking like what we did with
+     FrameTracker -> orbTracker.
+     */
+    private void homogBasedTracker(long timestamp, Bitmap frame) {
+        //1. Get the current frame transformation relative to reference frame.
+
+        RefFrame referenceFrame = RefFrame.getInstance();
+
+        long start = SystemClock.uptimeMillis();
+
+        Mat refMat = referenceFrame.refMat;
+        Mat currMat = new Mat();
+
+        Utils.bitmapToMat(frame, currMat);
+        Imgproc.cvtColor(currMat, currMat, Imgproc.COLOR_RGB2GRAY);
+
+        MatOfPoint refPoints = referenceFrame.refPoints;
+        MatOfPoint currFeatures = new MatOfPoint();
+
+        Imgproc.goodFeaturesToTrack(currMat,currFeatures,50,0.1,10);
+
+        MatOfPoint2f refPoints2F = new MatOfPoint2f(refPoints.toArray());
+        MatOfPoint2f currPoints2F = new MatOfPoint2f();
+        MatOfByte status = new MatOfByte();
+        Video.calcOpticalFlowPyrLK(refMat,currMat,refPoints2F,currPoints2F, status, new MatOfFloat());
+
+        //2. Updating the locations based on the tracking information
+//        reference.second.location = location;
+//        reference.second.lastUpdate = SystemClock.uptimeMillis();;
+
+        Mat Homog = Calib3d.findHomography(refPoints2F, currPoints2F);
+
+        final LinkedList<TrackedRecognition> copyList =
+                new LinkedList<TrackedRecognition>(trackedObjects); // or cvTrackedObjects ..?
+
+        trackedObjects.clear();
+        for (TrackedRecognition recognition: copyList) {
+
+            // For every tracked object, update accordingly, i.e. warp previous loc according
+            // to the computed homography.
+            Mat obj_corners = new Mat(4,1, CvType.CV_32FC2);
+            Mat scene_corners = new Mat(4,1,CvType.CV_32FC2);
+
+            obj_corners.put(0, 0, new double[] {0,0});
+            obj_corners.put(1, 0, new double[] {refImage.width()-1,0});
+            obj_corners.put(2, 0, new double[] {refImage.width()-1,refImage.height()-1});
+            obj_corners.put(3, 0, new double[] {0,refImage.height()-1});
+
+            Core.perspectiveTransform(obj_corners,scene_corners,Homog);
+
+            MatOfPoint sceneCorners = new MatOfPoint();
+            for (int i=0; i < scene_corners.rows(); i++) {
+                Point point = new Point();
+                point.set(scene_corners.get(i,0));
+                points.add(point);
+            }
+            sceneCorners.fromList(points);
+            mScenePoints.add(sceneCorners);
+
+            recognition.lastUpdate = SystemClock.uptimeMillis();;
+            trackedObjects.add(recognition);
+        }
+    }
 
   private void orbTracker(long timestamp,
                           List<Pair<Mat, TrackedRecognition>> references,
@@ -747,6 +946,7 @@ public class DemoMultiBoxTracker {
           double locX = location.centerX();
           double locY = location.centerY();
           double diff = Math.sqrt((prevX - locX)*(prevX - locX) + (prevY - locY)*(prevY - locY));
+
           if (diff < TRACKING_DIFFERENCE) {
             logger.i("Diff: %f", diff);
 
@@ -765,6 +965,67 @@ public class DemoMultiBoxTracker {
     }
 
   }
+
+    public void setFrame(Bitmap bitmap){
+        RefFrame referenceFrame = RefFrame.getInstance();
+
+        referenceFrame.refFrame = bitmap;
+
+        Mat refMat = new Mat();
+        MatOfPoint refFeatures = new MatOfPoint();
+
+        Utils.bitmapToMat(bitmap, refMat);
+        Imgproc.cvtColor(refMat, refMat, Imgproc.COLOR_RGB2GRAY);
+
+        Imgproc.goodFeaturesToTrack(refMat,refFeatures,50,0.1,10);
+
+        referenceFrame.refMat = refMat;
+        referenceFrame.refPoints = refFeatures;
+    }
+
+    private Mat histogram(Bitmap bitmap){
+
+        Mat img = new Mat();
+        Utils.bitmapToMat(bitmap, img);
+        Imgproc.cvtColor(img, img, Imgproc.COLOR_RGB2GRAY);
+
+        Vector<Mat> bgr_planes = new Vector<Mat>();
+        Core.split(img, bgr_planes);
+
+        MatOfInt histSize = new MatOfInt(256);
+
+        final MatOfFloat histRange = new MatOfFloat(0f, 256f);
+
+        boolean accumulate = false;
+        Mat b_hist = new  Mat();
+
+        Imgproc.calcHist(bgr_planes, new MatOfInt(0),new Mat(), b_hist, histSize, histRange, accumulate);
+        return b_hist;
+
+    }
+
+    private Mat calcOpticalFlow(Bitmap prev, Bitmap next){
+
+        long start = SystemClock.uptimeMillis();
+
+        Mat prevMat = new Mat();
+        Utils.bitmapToMat(prev, prevMat);
+        Imgproc.cvtColor(prevMat, prevMat, Imgproc.COLOR_RGB2GRAY);
+
+        Mat nextMat = new Mat();
+        Utils.bitmapToMat(next, nextMat);
+        Imgproc.cvtColor(nextMat, nextMat, Imgproc.COLOR_RGB2GRAY);
+
+        Mat flow = new Mat(prevMat.size(), CvType.CV_8UC1);
+
+        Video.calcOpticalFlowFarneback(prevMat, nextMat, flow,0.5,1, 1, 1, 5,
+                1.1,1);
+
+        logger.i("Optical Flow time: %d", SystemClock.uptimeMillis() - start);
+
+        return flow;
+
+    }
 
   private void processResults(
       final long timestamp, final List<Recognition> results, final byte[] originalFrame) {
