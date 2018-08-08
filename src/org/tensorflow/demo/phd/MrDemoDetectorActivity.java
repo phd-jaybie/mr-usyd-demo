@@ -299,9 +299,9 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
                     @Override
                     public void drawCallback(final Canvas canvas) {
 
-                        if (!isDebug()) {
+/*                        if (!isDebug()) {
                             return;
-                        }
+                        }*/
 
                         final Bitmap copy = cropCopyBitmap;
                         if (copy == null) {
@@ -408,7 +408,7 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
 
         // Usually, this onFrame method below doesn't really happen as you would see in the toast
         // message that appears when you start up this detector app.
-        tracker.FrameTracker(
+        tracker.HomogFrameTracker(
                 previewWidth,
                 previewHeight,
                 sensorOrientation,

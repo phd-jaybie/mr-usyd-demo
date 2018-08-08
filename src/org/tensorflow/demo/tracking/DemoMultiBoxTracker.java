@@ -18,6 +18,7 @@ package org.tensorflow.demo.tracking;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -52,6 +53,7 @@ import org.opencv.features2d.ORB;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.video.Video;
 import org.tensorflow.demo.Classifier.Recognition;
+import org.tensorflow.demo.R;
 import org.tensorflow.demo.env.BorderedText;
 import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.env.Logger;
@@ -75,131 +77,134 @@ import static org.tensorflow.demo.MrCameraActivity.MIN_MATCH_COUNT;
 
 public class DemoMultiBoxTracker {
 
-  int minMatchCount = Math.round(MIN_MATCH_COUNT*10/30);
+    private int minMatchCount = Math.round(MIN_MATCH_COUNT*10/30);
 
-  private final Logger logger = new Logger();
+    private final Logger logger = new Logger();
 
-  private static final float TEXT_SIZE_DIP = 18;
+    private static final float TEXT_SIZE_DIP = 18;
 
-  private static final int TRACKING_TIMEOUT = 1000;
+    private static final int TRACKING_TIMEOUT = 1000;
 
-  private static final int TRACKING_DIFFERENCE = 100;
+    private static final int TRACKING_DIFFERENCE = 100;
 
-  // Maximum percentage of a box that can be overlapped by another box at detection time. Otherwise
-  // the lower scored box (new or old) will be removed.
-  private static final float MAX_OVERLAP = 0.2f;
+    // Maximum percentage of a box that can be overlapped by another box at detection time. Otherwise
+    // the lower scored box (new or old) will be removed.
+    private static final float MAX_OVERLAP = 0.2f;
 
-  private static final float MIN_SIZE = 16.0f;
+    private static final float MIN_SIZE = 16.0f;
 
-  // Allow replacement of the tracked box with new results if
-  // correlation has dropped below this level.
-  private static final float MARGINAL_CORRELATION = 0.75f;
+    // Allow replacement of the tracked box with new results if
+    // correlation has dropped below this level.
+    private static final float MARGINAL_CORRELATION = 0.75f;
 
-  // Consider object to be lost if correlation falls below this threshold.
-  private static final float MIN_CORRELATION = 0.3f;
+    // Consider object to be lost if correlation falls below this threshold.
+    private static final float MIN_CORRELATION = 0.3f;
 
-  private static final int[] COLORS = {
-    Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.CYAN, Color.MAGENTA, Color.WHITE,
-    Color.parseColor("#55FF55"), Color.parseColor("#FFA500"), Color.parseColor("#FF8888"),
-    Color.parseColor("#AAAAFF"), Color.parseColor("#FFFFAA"), Color.parseColor("#55AAAA"),
-    Color.parseColor("#AA33AA"), Color.parseColor("#0D0068")
-  };
+    private static final int[] COLORS = {
+        Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.CYAN, Color.MAGENTA, Color.WHITE,
+        Color.parseColor("#55FF55"), Color.parseColor("#FFA500"), Color.parseColor("#FF8888"),
+        Color.parseColor("#AAAAFF"), Color.parseColor("#FFFFAA"), Color.parseColor("#55AAAA"),
+        Color.parseColor("#AA33AA"), Color.parseColor("#0D0068")
+    };
 
-  static final String[] sensitiveObjects = new String[]
+    static final String[] sensitiveObjects = new String[]
           {"person", "bed", "toilet", "laptop", "cell phone"}; //high sensitivity objects
 
-  private final Queue<Integer> availableColors = new LinkedList<Integer>();
+    private final Queue<Integer> availableColors = new LinkedList<Integer>();
 
-  public ObjectTracker objectTracker;
+    public ObjectTracker objectTracker;
 
-  final List<Pair<Float, RectF>> screenRects = new LinkedList<Pair<Float, RectF>>();
+    final List<Pair<Float, RectF>> screenRects = new LinkedList<Pair<Float, RectF>>();
 
-  /*// This is the reference frame for tracking.
-  private Bitmap prevFrame;*/
+    /*// This is the reference frame for tracking.
+    private Bitmap prevFrame;*/
 
-  private static class TrackedRecognition {
-    ObjectTracker.TrackedObject trackedObject;
-    RectF location;
-    float detectionConfidence;
-    int color;
-    String title;
-    long lastUpdate;
-    int coverColor;
-    boolean sensitivity = false;
-  }
-
-  private final List<TrackedRecognition> trackedObjects = new LinkedList<TrackedRecognition>();
-
-  private static class CvTrackedRecognition {
-    TrackedRecognition trackedRecognition;
-    RectF location;
-    float detectionConfidence;
-    int color;
-    String title;
-    Mat RefImageMat;
-
-  }
-
-  private static class RefFrame {
-      private static final RefFrame instance = new RefFrame();
-      Bitmap refFrame;
-      Mat refMat;
-      MatOfPoint refPoints;
-
-      private RefFrame(){ }
-
-      public static RefFrame getInstance() {
-          return instance;
-      }
-
-  }
-
-  private final List<CvTrackedRecognition> cvTrackedObjects = new LinkedList<>();
-
-  private final Paint boxPaint = new Paint();
-
-  private final float textSizePx;
-  private final BorderedText borderedText;
-
-  private Matrix frameToCanvasMatrix;
-
-  private int frameWidth;
-  private int frameHeight;
-
-  private int sensorOrientation;
-  private Context context;
-
-  private static ObjectReferenceList objectReferenceList = ObjectReferenceList.getInstance();
-
-  private static Resources res;
-
-  public DemoMultiBoxTracker(final Context context) {
-    this.context = context;
-    for (final int color : COLORS) {
-      availableColors.add(color);
+    private static class TrackedRecognition {
+        ObjectTracker.TrackedObject trackedObject;
+        RectF location;
+        float detectionConfidence;
+        int color;
+        String title;
+        long lastUpdate;
+        int coverColor;
+        boolean sensitivity = false;
     }
 
-    boxPaint.setColor(Color.RED);
-    boxPaint.setStyle(Style.STROKE);
-    boxPaint.setStrokeWidth(12.0f);
-    boxPaint.setStrokeCap(Cap.ROUND);
-    boxPaint.setStrokeJoin(Join.ROUND);
-    boxPaint.setStrokeMiter(100);
+    private final List<TrackedRecognition> trackedObjects = new LinkedList<TrackedRecognition>();
 
-    textSizePx =
-        TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, context.getResources().getDisplayMetrics());
-    borderedText = new BorderedText(textSizePx);
+    private static class CvTrackedRecognition {
+        TrackedRecognition trackedRecognition;
+        RectF location;
+        float detectionConfidence;
+        int color;
+        String title;
+        Mat RefImageMat;
+    }
 
-    res = context.getResources();
+    private static class RefFrame {
+        private static final RefFrame instance = new RefFrame();
+        Bitmap refFrame;
+        Mat refMat;
+        MatOfPoint refPoints;
 
-  }
+        private RefFrame(){ }
 
-  private Matrix getFrameToCanvasMatrix() {
+        public static RefFrame getInstance() {
+          return instance;
+        }
+
+    }
+
+    private final List<CvTrackedRecognition> cvTrackedObjects = new LinkedList<>();
+
+    private final Paint boxPaint = new Paint();
+
+    private final float textSizePx;
+    private final BorderedText borderedText;
+
+    private Matrix frameToCanvasMatrix;
+
+    private int frameWidth;
+    private int frameHeight;
+
+    private int sensorOrientation;
+    private Context context;
+
+    private static ObjectReferenceList objectReferenceList = ObjectReferenceList.getInstance();
+
+    private static Resources res;
+
+    private Bitmap coverBitmap;
+
+    public DemoMultiBoxTracker(final Context context) {
+        this.context = context;
+        for (final int color : COLORS) {
+            availableColors.add(color);
+        }
+
+        boxPaint.setColor(Color.RED);
+        boxPaint.setStyle(Style.STROKE);
+        boxPaint.setStrokeWidth(12.0f);
+        boxPaint.setStrokeCap(Cap.ROUND);
+        boxPaint.setStrokeJoin(Join.ROUND);
+        boxPaint.setStrokeMiter(100);
+
+        textSizePx =
+                TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, context.getResources().getDisplayMetrics());
+        borderedText = new BorderedText(textSizePx);
+
+        res = context.getResources();
+
+        coverBitmap = BitmapFactory.decodeResource(res, R.drawable.csiro);
+
+    }
+
+    private Matrix getFrameToCanvasMatrix() {
     return frameToCanvasMatrix;
-  }
+    }
 
-  public synchronized void drawDebug(final Canvas canvas) {
+    public synchronized void drawDebug(final Canvas canvas) {
     final Paint textPaint = new Paint();
     textPaint.setColor(Color.WHITE);
     textPaint.setTextSize(60.0f);
@@ -235,17 +240,20 @@ public class DemoMultiBoxTracker {
 
     final Matrix matrix = getFrameToCanvasMatrix();
     objectTracker.drawDebug(canvas, matrix);
-  }
+    }
 
-  public synchronized void trackResults(
-      final List<Recognition> results, final byte[] frame, final long timestamp) {
-    logger.i("Processing %d results from %d", results.size(), timestamp);
-    processResults(timestamp, results, frame);
+    public synchronized void trackResults(
+        final List<Recognition> results, final byte[] frame, final long timestamp) {
+
+        logger.i("Processing %d results from %d", results.size(), timestamp);
+        processResults(timestamp, results, frame);
   }
 
   public synchronized void draw(final Canvas canvas) {
-    final boolean rotated = sensorOrientation % 180 == 90;
-    final float multiplier =
+      RefFrame referenceFrame = RefFrame.getInstance();
+
+      final boolean rotated = sensorOrientation % 180 == 90;
+      final float multiplier =
         Math.min(canvas.getHeight() / (float) (rotated ? frameWidth : frameHeight),
                  canvas.getWidth() / (float) (rotated ? frameHeight : frameWidth));
     frameToCanvasMatrix =
@@ -272,6 +280,16 @@ public class DemoMultiBoxTracker {
 
       if (recognition.sensitivity) {
 
+          Rect roundedLocation = new Rect();
+          trackedPos.round(roundedLocation);
+
+          final int coverColor = referenceFrame
+                  .refFrame
+                  .getPixel(Math.min(Math.abs(roundedLocation.centerX()),frameWidth/2),
+                          Math.min(Math.abs(roundedLocation.centerY()),frameHeight/2));
+
+          logger.i("Color: %d ", coverColor);
+
         // expanded the destination Rect to prevent leaks
         final RectF secretPos = new RectF(
                 0.9f*trackedPos.left,
@@ -279,15 +297,14 @@ public class DemoMultiBoxTracker {
                 1.1f*trackedPos.right,
                 0.9f*trackedPos.bottom);
 
-        /*Bitmap bitmap = BitmapFactory.decodeResource(res, R.drawable.csiro);
-        canvas.drawBitmap(bitmap,
-                new Rect(0,0,bitmap.getWidth(),bitmap.getHeight()),
+/*        canvas.drawBitmap(coverBitmap,
+                new Rect(0,0,coverBitmap.getWidth(),coverBitmap.getHeight()),
                 trackedPos,
                 boxPaint);*/
 
         Paint fillPaint = new Paint();
         fillPaint.setStyle(Style.FILL);
-        fillPaint.setColor(recognition.coverColor);
+        fillPaint.setColor(coverColor);
 
         //float cornerSize = Math.min(secretPos.width(), secretPos.height()) / 16.0f;
         canvas.drawRect(trackedPos, fillPaint);    // fill
@@ -562,49 +579,37 @@ public class DemoMultiBoxTracker {
         // Update time and sensitivity, i.e. check for timeouts
         refreshTrackedObjects(frame);
 
+
         if (!initialized) {
+            // This if statement waits for detections to arrive from the detectors.
             //cvTrackedObjects.clear();
 
             logger.i("%d, Initializing Homog-CV-Tracker: %dx%d", timestamp, w, h);
 
-//            for (final TrackedRecognition recognition: trackedObjects) {
-//
-//                if (recognition.title.contains("Marker")) {
-//                    // Should I add it to the CvTracked objects immediately?
-//                    continue;
-//                }
-//
-//                CvTrackedRecognition cvTrackedRecognition = new CvTrackedRecognition();
-//                //Mat currentFrame = new Mat();
-//
-//                RectF location = recognition.location;
-//                Rect roundedLocation = new Rect();
-//                location.round(roundedLocation);
-//
-//                final Bitmap refImage = Bitmap.createBitmap(frame,
-//                        Math.abs(roundedLocation.left),
-//                        Math.abs(roundedLocation.top),
-//                        Math.min((roundedLocation.right - roundedLocation.left),(frame.getWidth()-Math.abs(roundedLocation.left))),
-//                        Math.min((roundedLocation.bottom - roundedLocation.top),(frame.getHeight()-Math.abs(roundedLocation.top)))
-//                );
-//
-///*                Utils.bitmapToMat(refImage, currentFrame);
-//                logger.i("%d, MatW: %d, MatH: %d",
-//                        timestamp,
-//                        currentFrame.cols(),
-//                        currentFrame.rows());*/
-//                final int coverColor = refImage.getPixel(0, 0);
-//
-//                cvTrackedRecognition.trackedRecognition = recognition;
-//                cvTrackedRecognition.location = recognition.location;
-//                cvTrackedRecognition.color = recognition.color;
-//                cvTrackedRecognition.detectionConfidence = recognition.detectionConfidence;
-//                cvTrackedRecognition.title = recognition.title;
-//                //cvTrackedRecognition.RefImageMat = currentFrame;
-//                cvTrackedRecognition.trackedRecognition.coverColor = coverColor;
-//
-//                cvTrackedObjects.add(cvTrackedRecognition);
-//            }
+/*            for (final TrackedRecognition recognition: trackedObjects) {
+
+                //Mat currentFrame = new Mat();
+
+                RectF location = recognition.location;
+                Rect roundedLocation = new Rect();
+                location.round(roundedLocation);
+
+*//*                final Bitmap refImage = Bitmap.createBitmap(frame,
+                        Math.abs(roundedLocation.left),
+                        Math.abs(roundedLocation.top),
+                        Math.min(Math.abs(roundedLocation.right - roundedLocation.left), Math.abs(frame.getWidth() - Math.abs(roundedLocation.left))),
+                        Math.min(Math.abs(roundedLocation.bottom - roundedLocation.top), Math.abs(frame.getHeight() - Math.abs(roundedLocation.top)))
+                );*//*
+
+                *//*logger.i("%d, MatW: %d, MatH: %d",
+                        timestamp,
+                        currentFrame.cols(),
+                        currentFrame.rows());*//*
+                final int coverColor = frame.getPixel(Math.abs(roundedLocation.left), Math.abs(roundedLocation.top));
+
+                recognition.color = coverColor;
+
+            }*/
 
             frameWidth = w;
             frameHeight = h;
@@ -613,10 +618,10 @@ public class DemoMultiBoxTracker {
             return;
         }
 
-        if (cvTrackedObjects.isEmpty()){
+/*        if (cvTrackedObjects.isEmpty()){
             logger.i("Nothing tracked.");
             return;
-        }
+        }*/
 
         //Mat H1 = histogram(prevFrame);
         //Mat H2 = histogram(frame);
@@ -654,26 +659,10 @@ public class DemoMultiBoxTracker {
 
         long start = System.currentTimeMillis();
 
-        //List<Pair<Mat, TrackedRecognition>> refImageMats = new ArrayList<>();
-
-        // All TF tracked objects are tracked using ORB while no new
-        /*for (final CvTrackedRecognition cvTrackedRecognition: cvTrackedObjects){
-            logger.i("Tracking object: " + cvTrackedRecognition.title);
-
-            refImageMats.add(new Pair<>(cvTrackedRecognition.RefImageMat,cvTrackedRecognition.trackedRecognition));
-        }*/
-
-        //orbTracker(timestamp,refImageMats, frame);
         homogBasedTracker(timestamp, frame);
 
-/*    if (!results.isEmpty()) {
-      for (final TrackedRecognition result: results){
-        trackedObjects.add(result);
-      }
-    }*/
-
         long end = System.currentTimeMillis() - start;
-        logger.i("CV Frame tracking time: %d", end);
+        logger.i("CV (Homography-based) Frame tracking time: %d", end);
 
         //objectTracker.nextFrame(frame, null, timestamp, null, true);
 
@@ -745,35 +734,85 @@ public class DemoMultiBoxTracker {
         Mat Homog = Calib3d.findHomography(refPoints2F, currPoints2F);
 
         final LinkedList<TrackedRecognition> copyList =
-                new LinkedList<TrackedRecognition>(trackedObjects); // or cvTrackedObjects ..?
+                new LinkedList<>(trackedObjects); // or cvTrackedObjects ..?
 
         trackedObjects.clear();
+
         for (TrackedRecognition recognition: copyList) {
+
+            RectF location = recognition.location;
 
             // For every tracked object, update accordingly, i.e. warp previous loc according
             // to the computed homography.
-            Mat obj_corners = new Mat(4,1, CvType.CV_32FC2);
-            Mat scene_corners = new Mat(4,1,CvType.CV_32FC2);
+            Mat ref_location = new Mat(4,1, CvType.CV_32FC2);
+            Mat cur_location = new Mat(4,1,CvType.CV_32FC2);
 
-            obj_corners.put(0, 0, new double[] {0,0});
-            obj_corners.put(1, 0, new double[] {refImage.width()-1,0});
-            obj_corners.put(2, 0, new double[] {refImage.width()-1,refImage.height()-1});
-            obj_corners.put(3, 0, new double[] {0,refImage.height()-1});
+            ref_location.put(0, 0, new double[] {location.left,location.top});
+            ref_location.put(1, 0, new double[] {location.right,location.top});
+            ref_location.put(2, 0, new double[] {location.right,location.bottom});
+            ref_location.put(3, 0, new double[] {location.left,location.bottom});
 
-            Core.perspectiveTransform(obj_corners,scene_corners,Homog);
+            Core.perspectiveTransform(ref_location,cur_location,Homog);
 
-            MatOfPoint sceneCorners = new MatOfPoint();
-            for (int i=0; i < scene_corners.rows(); i++) {
+            List<Point> points = new ArrayList<>();
+            RectF newLocation = new RectF();
+
+            for (int i=0; i < cur_location.rows(); i++) {
                 Point point = new Point();
-                point.set(scene_corners.get(i,0));
+                point.set(cur_location.get(i,0));
                 points.add(point);
             }
-            sceneCorners.fromList(points);
-            mScenePoints.add(sceneCorners);
 
-            recognition.lastUpdate = SystemClock.uptimeMillis();;
-            trackedObjects.add(recognition);
+            float[] xValues = {(float) points.get(0).x,
+                    (float) points.get(1).x,
+                    (float) points.get(2).x,
+                    (float) points.get(3).x};
+            float[] yValues = {(float) points.get(0).y,
+                    (float) points.get(1).y,
+                    (float) points.get(2).y,
+                    (float) points.get(3).y};
+            Arrays.sort(xValues);
+            Arrays.sort(yValues);
+            newLocation.set(xValues[0], yValues[0], xValues[3], yValues[3]);
+
+            try {
+                recognition.location = newLocation;
+                recognition.sensitivity = objectReferenceList.isSensitive(recognition.title);
+                recognition.lastUpdate = SystemClock.uptimeMillis();
+                trackedObjects.add(recognition);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            setFrame(frame);
+
         }
+//        for (TrackedRecognition recognition: copyList) {
+//
+//            // For every tracked object, update accordingly, i.e. warp previous loc according
+//            // to the computed homography.
+//            Mat obj_corners = new Mat(4,1, CvType.CV_32FC2);
+//            Mat scene_corners = new Mat(4,1,CvType.CV_32FC2);
+//
+//            obj_corners.put(0, 0, new double[] {0,0});
+//            obj_corners.put(1, 0, new double[] {refImage.width()-1,0});
+//            obj_corners.put(2, 0, new double[] {refImage.width()-1,refImage.height()-1});
+//            obj_corners.put(3, 0, new double[] {0,refImage.height()-1});
+//
+//            Core.perspectiveTransform(obj_corners,scene_corners,Homog);
+//
+//            MatOfPoint sceneCorners = new MatOfPoint();
+//            for (int i=0; i < scene_corners.rows(); i++) {
+//                Point point = new Point();
+//                point.set(scene_corners.get(i,0));
+//                points.add(point);
+//            }
+//            sceneCorners.fromList(points);
+//            mScenePoints.add(sceneCorners);
+//
+//            recognition.lastUpdate = SystemClock.uptimeMillis();;
+//            trackedObjects.add(recognition);
+//        }
     }
 
   private void orbTracker(long timestamp,

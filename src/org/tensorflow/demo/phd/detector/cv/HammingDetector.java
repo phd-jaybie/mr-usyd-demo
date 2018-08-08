@@ -340,10 +340,10 @@ public class HammingDetector implements MarkerDetector {
         validatedMarker = rotateN(marker, rotation);
 
         //return marker
-        LOGGER.d("Successful marker: %s \nRotated marker: %s \nrotation = %d",
+/*        LOGGER.d("Successful marker: %s \nRotated marker: %s \nrotation = %d",
                 Arrays.deepToString(marker),
                 Arrays.deepToString(validatedMarker),
-                rotation);
+                rotation);*/
         return validatedMarker;
     }
 

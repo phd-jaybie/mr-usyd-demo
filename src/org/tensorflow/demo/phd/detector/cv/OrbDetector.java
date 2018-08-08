@@ -267,7 +267,7 @@ public class OrbDetector implements CvDetector{
     public Recognition getTransformation(QueryImage queryImage,
                                          AppRandomizer.ReferenceImage reference) {
 
-        ArrayList<org.opencv.core.Point> scenePoints = imageMatcher(queryImage, reference);
+        ArrayList<Point> scenePoints = imageMatcher(queryImage, reference);
 
         final Path path = new Path();
         final RectF location = new RectF();
