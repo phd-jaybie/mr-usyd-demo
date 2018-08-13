@@ -130,7 +130,7 @@ public class DemoMultiBoxTracker {
         long lastUpdate;
         int coverColor;
         boolean sensitivity = false;
-        Path pathLocation;
+        Path pathLocation = new Path();
     }
 
     private final List<TrackedRecognition> trackedObjects = new LinkedList<TrackedRecognition>();
@@ -293,24 +293,28 @@ public class DemoMultiBoxTracker {
 
           logger.i("Color: %d ", coverColor);
 
-        // expanded the destination Rect to prevent leaks
-        final RectF secretPos = new RectF(
-                0.9f*trackedPos.left,
-                1.1f*trackedPos.top,
-                1.1f*trackedPos.right,
-                0.9f*trackedPos.bottom);
+          Paint fillPaint = new Paint();
+          fillPaint.setStyle(Style.FILL);
+          fillPaint.setColor(coverColor);
+
+          if (recognition.pathLocation.isEmpty()) {
+              // expanded the destination Rect to prevent leaks
+              final RectF secretPos = new RectF(
+                      0.9f*trackedPos.left,
+                      1.1f*trackedPos.top,
+                      1.1f*trackedPos.right,
+                      0.9f*trackedPos.bottom);
 
 /*        canvas.drawBitmap(coverBitmap,
                 new Rect(0,0,coverBitmap.getWidth(),coverBitmap.getHeight()),
                 trackedPos,
                 boxPaint);*/
 
-        Paint fillPaint = new Paint();
-        fillPaint.setStyle(Style.FILL);
-        fillPaint.setColor(coverColor);
-
-        //float cornerSize = Math.min(secretPos.width(), secretPos.height()) / 16.0f;
-        canvas.drawRect(trackedPos, fillPaint);    // fill
+              //float cornerSize = Math.min(secretPos.width(), secretPos.height()) / 16.0f;
+              canvas.drawRect(trackedPos, fillPaint);    // fill
+          } else {
+              canvas.drawPath(recognition.pathLocation, fillPaint);
+          }
 
       } else {
 
@@ -781,9 +785,9 @@ public class DemoMultiBoxTracker {
             try {
                 recognition.location = newLocation;
                 recognition.sensitivity = objectReferenceList.isSensitive(recognition.title);
-//                if (recognition.sensitivity) {
-//                    final Path newPath = getContourMatch(currMat, newLocation);
-//                }
+                if (recognition.sensitivity) {
+                    recognition.pathLocation = getContourMatch(currMat, newLocation);
+                }
                 recognition.lastUpdate = SystemClock.uptimeMillis();
                 trackedObjects.add(recognition);
             } catch (Exception e) {
@@ -1074,17 +1078,19 @@ public class DemoMultiBoxTracker {
 
     private Path getContourMatch(Mat frame, RectF location){
 
-        Mat gray = new Mat();
-        Imgproc.cvtColor(frame, gray, Imgproc.COLOR_BGR2GRAY);
+        Path contourMatchPath = new Path();
+
+//        Mat gray = new Mat();
+//        Imgproc.cvtColor(frame, gray, Imgproc.COLOR_BGR2GRAY);
 
         // python: edges = cv2.Canny(gray, 10, 100)
         Mat edges = new Mat();
-        Imgproc.Canny(gray, edges, 50, 500,3,false);
+        Imgproc.Canny(frame, edges, 50, 500,3,false);
 
         Mat mask = new Mat(frameWidth, frameHeight, CvType.CV_8UC1);
         Imgproc.rectangle(mask,
-                new Point(location.left,location.top),
-                new Point(location.right,location.bottom),
+                new Point(0.9f*location.left,0.9f*location.top),
+                new Point(1.1f*location.right,1.1f*location.bottom),
                 new Scalar(255));
 
         Mat masked = new Mat();
@@ -1092,32 +1098,54 @@ public class DemoMultiBoxTracker {
         // python: contours, hierarchy = cv2.findContours(edges.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)[-2:]
         List<MatOfPoint> contours = new ArrayList<>();
         Mat hierarchy = new Mat();
-        Imgproc.findContours(masked, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
+        Imgproc.findContours(masked, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-        double minContourLength = (Math.min(frameWidth, frameHeight)) / 10.0;
+        double minContourLength = Math.min(location.width(), location.height());
 
-        List<MatOfPoint> goodContours = new ArrayList<>();
+        MatOfPoint goodContour = new MatOfPoint();
 
-        double maxContourArea = 0;
+        double maxContourLength = 0;
 
         for (MatOfPoint contour : contours) {
-            //MatOfPoint2f curve = new MatOfPoint2f(contour.toArray());
-            //double contourLength = Imgproc.arcLength(curve, true);
+            MatOfPoint2f curve = new MatOfPoint2f(contour.toArray());
+            double contourLength = Imgproc.arcLength(curve, true);
             //final MatOfPoint2f curve = new MatOfPoint2f(contour.toArray());
 
-            double contourArea = Imgproc.contourArea(contour);
+            //double contourArea = Imgproc.contourArea(contour);
             // len(contour) --> contour.toList().size() //&& contourLength<=maxContourLength)
-            if (contourArea >=  4*minContourLength*minContourLength) {
-                if (contourArea > maxContourArea) {
-                    maxContourArea = contourArea;
-                    goodContours.add(0,contour);
-                } else goodContours.add(contour);
+            if (contourLength >=  4*minContourLength*minContourLength) {
+                if (contourLength > maxContourLength) {
+                    maxContourLength = contourLength;
+                    goodContour = contour;
+                }
             }
 
         } //getting long enough contours
 
-        return new Path();
+        logger.i("ContourMatching: detected contours %d",contours.size());
+
+        List<Point> contourPoints = goodContour.toList();
+
+        if (!contourPoints.isEmpty()) { // We got a contour that is possibly the object.
+
+            boolean pointInitialized = false;
+
+            for (Point point : contourPoints) {
+                if (!pointInitialized) {
+                    contourMatchPath.moveTo((float) point.x, (float) point.y);
+                    pointInitialized = true;
+                } else contourMatchPath.lineTo((float) point.x, (float) point.y);
+            }
+
+            contourMatchPath.close();
+
+            logger.i("ContourMatching: Detected a potentially matched path! %s", contourMatchPath.toString());
+        }
+
+        return contourMatchPath;
+
     }
+
     private void scaleRectF(RectF rect, float factor){
         float diffHorizontal = (rect.right-rect.left) * (factor-1f);
         float diffVertical = (rect.bottom-rect.top) * (factor-1f);
