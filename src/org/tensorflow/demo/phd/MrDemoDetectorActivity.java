@@ -502,10 +502,14 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
                         Integer localSecrecyHit = 0;
 
                         begin = SystemClock.uptimeMillis();
+
                         List<Classifier.Recognition> results = detector.recognizeImage(inputBitmap); // no classifier
+
                         long begin2 = SystemClock.uptimeMillis();
+
                         List<MarkerDetector.Marker> mResults =
                             hammingDetector.detectMarkers(inputBitmap);//rgbFrameBitmap);
+
                         markerDetectionTime = SystemClock.uptimeMillis() - begin2;
                         detect1 = SystemClock.uptimeMillis()-begin;
 
@@ -549,7 +553,6 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
                             Classifier.Recognition markerDetection = new Classifier.
                                     Recognition("Marker", mResult.getId(),
                                     minimumConfidence, locationRectF);
-
 
                             //appResults.add(markerDetection);
                             // No need to add the

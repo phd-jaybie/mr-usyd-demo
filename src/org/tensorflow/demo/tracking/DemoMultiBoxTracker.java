@@ -26,6 +26,7 @@ import android.graphics.Paint;
 import android.graphics.Paint.Cap;
 import android.graphics.Paint.Join;
 import android.graphics.Paint.Style;
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.SystemClock;
@@ -48,6 +49,7 @@ import org.opencv.core.MatOfKeyPoint;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
+import org.opencv.core.Scalar;
 import org.opencv.features2d.DescriptorMatcher;
 import org.opencv.features2d.ORB;
 import org.opencv.imgproc.Imgproc;
@@ -128,6 +130,7 @@ public class DemoMultiBoxTracker {
         long lastUpdate;
         int coverColor;
         boolean sensitivity = false;
+        Path pathLocation;
     }
 
     private final List<TrackedRecognition> trackedObjects = new LinkedList<TrackedRecognition>();
@@ -778,6 +781,9 @@ public class DemoMultiBoxTracker {
             try {
                 recognition.location = newLocation;
                 recognition.sensitivity = objectReferenceList.isSensitive(recognition.title);
+//                if (recognition.sensitivity) {
+//                    final Path newPath = getContourMatch(currMat, newLocation);
+//                }
                 recognition.lastUpdate = SystemClock.uptimeMillis();
                 trackedObjects.add(recognition);
             } catch (Exception e) {
@@ -815,7 +821,7 @@ public class DemoMultiBoxTracker {
 //        }
     }
 
-  private void orbTracker(long timestamp,
+    private void orbTracker(long timestamp,
                           List<Pair<Mat, TrackedRecognition>> references,
                           Bitmap frame){
 
@@ -1066,8 +1072,65 @@ public class DemoMultiBoxTracker {
 
     }
 
-  private void processResults(
-      final long timestamp, final List<Recognition> results, final byte[] originalFrame) {
+    private Path getContourMatch(Mat frame, RectF location){
+
+        Mat gray = new Mat();
+        Imgproc.cvtColor(frame, gray, Imgproc.COLOR_BGR2GRAY);
+
+        // python: edges = cv2.Canny(gray, 10, 100)
+        Mat edges = new Mat();
+        Imgproc.Canny(gray, edges, 50, 500,3,false);
+
+        Mat mask = new Mat(frameWidth, frameHeight, CvType.CV_8UC1);
+        Imgproc.rectangle(mask,
+                new Point(location.left,location.top),
+                new Point(location.right,location.bottom),
+                new Scalar(255));
+
+        Mat masked = new Mat();
+        edges.copyTo(masked,mask);
+        // python: contours, hierarchy = cv2.findContours(edges.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)[-2:]
+        List<MatOfPoint> contours = new ArrayList<>();
+        Mat hierarchy = new Mat();
+        Imgproc.findContours(masked, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
+
+        double minContourLength = (Math.min(frameWidth, frameHeight)) / 10.0;
+
+        List<MatOfPoint> goodContours = new ArrayList<>();
+
+        double maxContourArea = 0;
+
+        for (MatOfPoint contour : contours) {
+            //MatOfPoint2f curve = new MatOfPoint2f(contour.toArray());
+            //double contourLength = Imgproc.arcLength(curve, true);
+            //final MatOfPoint2f curve = new MatOfPoint2f(contour.toArray());
+
+            double contourArea = Imgproc.contourArea(contour);
+            // len(contour) --> contour.toList().size() //&& contourLength<=maxContourLength)
+            if (contourArea >=  4*minContourLength*minContourLength) {
+                if (contourArea > maxContourArea) {
+                    maxContourArea = contourArea;
+                    goodContours.add(0,contour);
+                } else goodContours.add(contour);
+            }
+
+        } //getting long enough contours
+
+        return new Path();
+    }
+    private void scaleRectF(RectF rect, float factor){
+        float diffHorizontal = (rect.right-rect.left) * (factor-1f);
+        float diffVertical = (rect.bottom-rect.top) * (factor-1f);
+
+        rect.top -= diffVertical/2f;
+        rect.bottom += diffVertical/2f;
+
+        rect.left -= diffHorizontal/2f;
+        rect.right += diffHorizontal/2f;
+    }
+
+    private void processResults(
+            final long timestamp, final List<Recognition> results, final byte[] originalFrame) {
 
     final List<Pair<Float, Recognition>> rectsToTrack = new LinkedList<Pair<Float, Recognition>>();
 
@@ -1144,10 +1207,10 @@ public class DemoMultiBoxTracker {
     for (final Pair<Float, Recognition> potential : rectsToTrack) {
       handleDetection(originalFrame, timestamp, potential);
     }
-  }
+    }
 
-  private void handleDetection(
-      final byte[] frameCopy, final long timestamp, final Pair<Float, Recognition> potential) {
+    private void handleDetection(
+            final byte[] frameCopy, final long timestamp, final Pair<Float, Recognition> potential) {
     final ObjectTracker.TrackedObject potentialObject =
         objectTracker.trackObject(potential.second.getLocation(), timestamp, frameCopy);
 
@@ -1263,6 +1326,6 @@ public class DemoMultiBoxTracker {
     trackedRecognition.color =
         recogToReplace != null ? recogToReplace.color : availableColors.poll();
     trackedObjects.add(trackedRecognition);
-  }
+    }
 
 }
