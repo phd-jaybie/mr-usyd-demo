@@ -259,7 +259,8 @@ public class DemoMultiBoxTracker {
       final float multiplier =
         Math.min(canvas.getHeight() / (float) (rotated ? frameWidth : frameHeight),
                  canvas.getWidth() / (float) (rotated ? frameHeight : frameWidth));
-    frameToCanvasMatrix =
+
+      frameToCanvasMatrix =
         ImageUtils.getTransformationMatrix(
             frameWidth,
             frameHeight,
@@ -291,11 +292,17 @@ public class DemoMultiBoxTracker {
                   .getPixel(Math.min(Math.abs(roundedLocation.centerX()),frameWidth/2),
                           Math.min(Math.abs(roundedLocation.centerY()),frameHeight/2));
 
-          logger.i("Color: %d ", coverColor);
+          //logger.i("Color: %d ", coverColor);
 
-          Paint fillPaint = new Paint();
-          fillPaint.setStyle(Style.FILL);
-          fillPaint.setColor(coverColor);
+          Paint paint = new Paint(); // Fill
+          paint.setStyle(Style.FILL);
+          paint.setColor(coverColor);
+          paint.setAlpha(250); // higher number is opaque, 127 is too transparent.
+
+/*          final Paint paint = new Paint(); // red box
+          paint.setColor(Color.RED);
+          paint.setStyle(Style.STROKE);
+          paint.setStrokeWidth(2.0f);*/
 
           if (recognition.pathLocation.isEmpty()) {
               // expanded the destination Rect to prevent leaks
@@ -311,9 +318,10 @@ public class DemoMultiBoxTracker {
                 boxPaint);*/
 
               //float cornerSize = Math.min(secretPos.width(), secretPos.height()) / 16.0f;
-              canvas.drawRect(trackedPos, fillPaint);    // fill
+              canvas.drawRect(trackedPos, paint);    // fill
           } else {
-              canvas.drawPath(recognition.pathLocation, fillPaint);
+              logger.i("Path is drawn.");
+              canvas.drawPath(recognition.pathLocation, paint);
           }
 
       } else {
@@ -785,9 +793,9 @@ public class DemoMultiBoxTracker {
             try {
                 recognition.location = newLocation;
                 recognition.sensitivity = objectReferenceList.isSensitive(recognition.title);
-                if (recognition.sensitivity) {
-                    recognition.pathLocation = getContourMatch(currMat, newLocation);
-                }
+                //if (recognition.sensitivity) {
+                //    recognition.pathLocation = getContourMatch(currMat, newLocation);
+                //}
                 recognition.lastUpdate = SystemClock.uptimeMillis();
                 trackedObjects.add(recognition);
             } catch (Exception e) {
@@ -1087,20 +1095,28 @@ public class DemoMultiBoxTracker {
         Mat edges = new Mat();
         Imgproc.Canny(frame, edges, 50, 500,3,false);
 
-        Mat mask = new Mat(frameWidth, frameHeight, CvType.CV_8UC1);
+        Mat mask = new Mat(frame.height(), frame.width(), CvType.CV_8UC1);
+        Mat mask2 = new Mat();
         Imgproc.rectangle(mask,
-                new Point(0.9f*location.left,0.9f*location.top),
-                new Point(1.1f*location.right,1.1f*location.bottom),
+                new Point(0.75f*location.left,0.75f*location.top),
+                new Point(1.24f*location.right,1.25f*location.bottom),
                 new Scalar(255));
 
+        logger.d("Mask width = %d, height = %d, channel = %d.", mask.width(), mask.height(), mask.channels());
+        logger.d("Location width = %.3f, height = %.3f", location.width(), location.height());
+        logger.d("Frame width = %d, height = %d, channel = %d.",frame.width(), frame.height(), frame.channels());
+
         Mat masked = new Mat();
-        edges.copyTo(masked,mask);
+        Core.bitwise_or(frame,mask,masked);
+
         // python: contours, hierarchy = cv2.findContours(edges.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)[-2:]
         List<MatOfPoint> contours = new ArrayList<>();
         Mat hierarchy = new Mat();
         Imgproc.findContours(masked, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-        double minContourLength = Math.min(location.width(), location.height());
+        logger.i("ContourMatching: detected contours %d",contours.size());
+
+        double minContourLength = Math.max(location.width(), location.height());
 
         MatOfPoint goodContour = new MatOfPoint();
 
@@ -1113,7 +1129,7 @@ public class DemoMultiBoxTracker {
 
             //double contourArea = Imgproc.contourArea(contour);
             // len(contour) --> contour.toList().size() //&& contourLength<=maxContourLength)
-            if (contourLength >=  4*minContourLength*minContourLength) {
+            if (contourLength >= minContourLength) {
                 if (contourLength > maxContourLength) {
                     maxContourLength = contourLength;
                     goodContour = contour;
@@ -1122,8 +1138,6 @@ public class DemoMultiBoxTracker {
 
         } //getting long enough contours
 
-        logger.i("ContourMatching: detected contours %d",contours.size());
-
         List<Point> contourPoints = goodContour.toList();
 
         if (!contourPoints.isEmpty()) { // We got a contour that is possibly the object.
@@ -1131,6 +1145,7 @@ public class DemoMultiBoxTracker {
             boolean pointInitialized = false;
 
             for (Point point : contourPoints) {
+                logger.i("%.3f, %.3f", point.x, point.y);
                 if (!pointInitialized) {
                     contourMatchPath.moveTo((float) point.x, (float) point.y);
                     pointInitialized = true;
@@ -1139,7 +1154,7 @@ public class DemoMultiBoxTracker {
 
             contourMatchPath.close();
 
-            logger.i("ContourMatching: Detected a potentially matched path! %s", contourMatchPath.toString());
+            logger.i("ContourMatching: Detected a potentially matched contour (path)!"); //%s", contourMatchPath.);
         }
 
         return contourMatchPath;
