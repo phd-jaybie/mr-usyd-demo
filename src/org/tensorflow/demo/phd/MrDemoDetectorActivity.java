@@ -24,6 +24,8 @@ import android.util.Size;
 import android.util.TypedValue;
 import android.widget.Toast;
 
+import com.google.ar.sceneform.ux.ArFragment;
+
 import org.tensorflow.demo.Classifier;
 import org.tensorflow.demo.MrCameraActivity;
 import org.tensorflow.demo.OverlayView;
@@ -162,8 +164,13 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
     private OverlayView augmentedOverlay;
     private Augmenter augmenter;
 
+    private ArFragment arFragment;
+
     @Override
     public void onPreviewSizeChosen(final Size size, final int rotation) {
+
+        setArFragment();
+
         final float textSizePx =
                 TypedValue.applyDimension(
                         TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, getResources().getDisplayMetrics());
@@ -299,9 +306,9 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
                     @Override
                     public void drawCallback(final Canvas canvas) {
 
-/*                        if (!isDebug()) {
+                        if (!isDebug()) {
                             return;
-                        }*/
+                        }
 
                         final Bitmap copy = cropCopyBitmap;
                         if (copy == null) {
@@ -320,7 +327,13 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
                         canvas.drawBitmap(copy, matrix, new Paint());
 
                         final Vector<String> lines = new Vector<String>();
+                        /**
+                         * The for-loop below is responsible for the debug information that appears
+                         * which looks like an output from the "drawDebug". The statString returns
+                         * non-null if onSetDebug, i.e. stat logging, is enabled.
+                         */
                         if (detector != null) {
+                            LOGGER.i("StatStrings are printed.");
                             final String statString = detector.getStatString();
                             final String[] statLines = statString.split("\n");
                             for (final String line : statLines) {
@@ -356,6 +369,18 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
                         augmenter.drawAugmentations(canvas);
                     }
                 });
+    }
+
+
+    protected void setArFragment() {
+
+        try {
+            arFragment = (ArFragment)
+                    getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Override
@@ -633,6 +658,6 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
 
     @Override
     public void onSetDebug(final boolean debug) {
-        detector.enableStatLogging(debug);
+        //detector.enableStatLogging(debug);
     }
 }

@@ -23,6 +23,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.opencv.android.OpenCVLoader;
 import org.tensorflow.demo.env.Logger;
@@ -66,7 +67,6 @@ public class MainActivity extends Activity {
 
     private ObjectReferenceList objectReferenceList;
 
-    private TextView textView;
     private EditText numberText;
     private EditText urlStringView;
     private EditText captureSizeView;
@@ -87,7 +87,6 @@ public class MainActivity extends Activity {
     public final String firstMessageDemo= "Initialize object references first.";
 
     private static TaskStackBuilder backStack;
-
 
     static {
         LOGGER.i("DataGatheringAverage, Image, Number of Apps, Frame Size, " +
@@ -158,7 +157,6 @@ public class MainActivity extends Activity {
         }
 */
 
-        textView = (TextView) findViewById(R.id.generate_textView);
         numberText = (EditText) findViewById(R.id.number_of_apps);
         captureSizeView = (EditText) findViewById(R.id.capture_size);
         urlStringView = (EditText) findViewById(R.id.remote_url);
@@ -274,7 +272,7 @@ public class MainActivity extends Activity {
         message = message + "Creating a " + numberOfApps + "-app list.\n";
         LOGGER.i(message);
 
-        writeToTextView(message);
+        writeToToast(message);
 
         randomizer = AppRandomizer.create();
 
@@ -292,7 +290,7 @@ public class MainActivity extends Activity {
                     LOGGER.i(appLogMessage);
                     appListText = appLogMessage;
 
-                    writeToTextView(appLogMessage);
+                    writeToToast(appLogMessage);
                     singletonAppList.setList(appList);
                     singletonAppList.setListText(appListText);
                 }
@@ -311,7 +309,7 @@ public class MainActivity extends Activity {
                     LOGGER.i(appLogMessage);
                     appListText = appLogMessage;
 
-                    writeToTextView(appLogMessage);
+                    writeToToast(appLogMessage);
                     singletonAppList.setList(appList);
                     singletonAppList.setListText(appListText);
                 }
@@ -327,13 +325,13 @@ public class MainActivity extends Activity {
         else inputSize = Integer.valueOf(captureSizeViewText);
 
         if (singletonAppList.getList().isEmpty()) {
-            writeToTextView(firstMessage);
+            writeToToast(firstMessage);
             return false;
         } else if (networkSwitch.isChecked() && (remoteUrl == null)) {// || !URLUtil.isValidUrl(remoteUrl)) ) {
-            writeToTextView("No or Invalid URL for remote.");
+            writeToToast("No or Invalid URL for remote.");
             return false;
         } else {
-            writeToTextView(singletonAppList.getListText());
+            writeToToast(singletonAppList.getListText());
             return true;
         }
 
@@ -348,7 +346,7 @@ public class MainActivity extends Activity {
 */
 
         if (objectReferenceList.getList().isEmpty()) {
-            writeToTextView(firstMessageDemo);
+            writeToToast(firstMessageDemo);
             return false;
         }
 
@@ -356,15 +354,17 @@ public class MainActivity extends Activity {
 
     }
 
-    private void writeToTextView(final String message){
-
-        runOnUiThread(new Runnable() {
+    private void writeToToast(final String message){
+        Toast toast = Toast.makeText(MainActivity.this, message,
+                Toast.LENGTH_LONG);
+        toast.show();
+/*        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 if (textView == null) textView = (TextView) findViewById(R.id.generate_textView);
                 textView.setText(message);
             }
-        });
+        });*/
     }
 
     public void onFastDebug(View view){
@@ -488,7 +488,9 @@ public class MainActivity extends Activity {
 
     public void mrDemoDetectionIntent(View view){
 
-        if (!checkListDemo()) return;
+        if (!checkListDemo()) {
+            return;
+        }
 
         Intent detectorIntent = new Intent(this, MrDemoDetectorActivity.class);
         detectorIntent.putExtra("InputSize", inputSize);

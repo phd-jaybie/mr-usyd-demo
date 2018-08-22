@@ -154,8 +154,8 @@ public class MrInitializeDemoDetectorActivity extends MrCameraActivity implement
 
     OverlayView trackingOverlay;
 
-    private OverlayView augmentedOverlay;
-    private Augmenter augmenter;
+//    private OverlayView augmentedOverlay;
+//    private Augmenter augmenter;
 
     @Override
     public void onPreviewSizeChosen(final Size size, final int rotation) {
@@ -168,7 +168,7 @@ public class MrInitializeDemoDetectorActivity extends MrCameraActivity implement
         tracker = new MultiBoxTracker(this);
 
         //For non-CV tracking, comment out the line below.
-        augmenter = new Augmenter();
+        //augmenter = new Augmenter();
 
         // setting up a TF detector (a TF OD type)
         int cropSize = TF_OD_API_INPUT_SIZE;
@@ -338,7 +338,7 @@ public class MrInitializeDemoDetectorActivity extends MrCameraActivity implement
          * Due to the preset canvas type it accesses, for the meantime we use this canvas types to
          * draw. However, future implementations may want to use a GL type View so as to draw GL
          * objects (which has more 3D support than canvas).
-         */
+         *//*
         augmentedOverlay = (OverlayView) findViewById(R.id.augmented_overlay);
         augmentedOverlay.addCallback(
                 new DrawCallback() {
@@ -347,7 +347,7 @@ public class MrInitializeDemoDetectorActivity extends MrCameraActivity implement
                         augmenter.drawAugmentations(canvas);
                     }
                 });
-    }
+*/    }
 
     @Override
     protected void processImage() {
@@ -604,7 +604,7 @@ public class MrInitializeDemoDetectorActivity extends MrCameraActivity implement
 
                         // pretty much rendering
                         //tracker.trackResults(mappedRecognitions, luminanceCopy, currTimestamp);
-                        augmenter.trackResults(luminanceCopy, currTimestamp);
+                        //augmenter.trackResults(luminanceCopy, currTimestamp);
                         trackingOverlay.postInvalidate();
 
                         requestRender();
@@ -640,7 +640,7 @@ public class MrInitializeDemoDetectorActivity extends MrCameraActivity implement
 
     @Override
     protected int getLayoutId() {
-        return R.layout.camera_connection_fragment_augmented;
+        return R.layout.camera_connection_fragment_tracking;
     }
 
     @Override

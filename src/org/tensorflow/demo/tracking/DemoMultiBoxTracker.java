@@ -208,41 +208,42 @@ public class DemoMultiBoxTracker {
     }
 
     public synchronized void drawDebug(final Canvas canvas) {
-    final Paint textPaint = new Paint();
-    textPaint.setColor(Color.WHITE);
-    textPaint.setTextSize(60.0f);
+        logger.i("Entered drawDebug");
+        final Paint textPaint = new Paint();
+        textPaint.setColor(Color.WHITE);
+        textPaint.setTextSize(60.0f);
 
-    final Paint boxPaint = new Paint();
-    boxPaint.setColor(Color.RED);
-    boxPaint.setAlpha(200);
-    boxPaint.setStyle(Style.STROKE);
+        final Paint boxPaint = new Paint();
+        boxPaint.setColor(Color.RED);
+        boxPaint.setAlpha(200);
+        boxPaint.setStyle(Style.STROKE);
 
-    for (final Pair<Float, RectF> detection : screenRects) {
-      final RectF rect = detection.second;
-      canvas.drawRect(rect, boxPaint);
-      canvas.drawText("" + detection.first, rect.left, rect.top, textPaint);
-      borderedText.drawText(canvas, rect.centerX(), rect.centerY(), "" + detection.first);
-    }
+        for (final Pair<Float, RectF> detection : screenRects) {
+          final RectF rect = detection.second;
+          canvas.drawRect(rect, boxPaint);
+          canvas.drawText("" + detection.first, rect.left, rect.top, textPaint);
+          borderedText.drawText(canvas, rect.centerX(), rect.centerY(), "" + detection.first);
+        }
 
-    if (objectTracker == null) {
-      logger.i("DrawDebug: Object Tracker is null.");
-      return;
-    }
+        if (objectTracker == null) {
+          logger.i("DrawDebug: Object Tracker is null.");
+          return;
+        }
 
-    // Draw correlations.
-    for (final TrackedRecognition recognition : trackedObjects) {
-      final ObjectTracker.TrackedObject trackedObject = recognition.trackedObject;
+        // Draw correlations.
+        for (final TrackedRecognition recognition : trackedObjects) {
+          final ObjectTracker.TrackedObject trackedObject = recognition.trackedObject;
 
-      final RectF trackedPos = trackedObject.getTrackedPositionInPreviewFrame();
+          final RectF trackedPos = trackedObject.getTrackedPositionInPreviewFrame();
 
-      if (getFrameToCanvasMatrix().mapRect(trackedPos)) {
-        final String labelString = String.format("%.2f", trackedObject.getCurrentCorrelation());
-        borderedText.drawText(canvas, trackedPos.right, trackedPos.bottom, labelString);
-      }
-    }
+          if (getFrameToCanvasMatrix().mapRect(trackedPos)) {
+            final String labelString = String.format("%.2f", trackedObject.getCurrentCorrelation());
+            borderedText.drawText(canvas, trackedPos.right, trackedPos.bottom, labelString);
+          }
+        }
 
-    final Matrix matrix = getFrameToCanvasMatrix();
-    objectTracker.drawDebug(canvas, matrix);
+        final Matrix matrix = getFrameToCanvasMatrix();
+        objectTracker.drawDebug(canvas, matrix);
     }
 
     public synchronized void trackResults(
