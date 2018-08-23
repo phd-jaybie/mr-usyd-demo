@@ -164,12 +164,8 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
     private OverlayView augmentedOverlay;
     private Augmenter augmenter;
 
-    private ArFragment arFragment;
-
     @Override
     public void onPreviewSizeChosen(final Size size, final int rotation) {
-
-        setArFragment();
 
         final float textSizePx =
                 TypedValue.applyDimension(
@@ -250,7 +246,7 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
         previewHeight = size.getHeight();
 
         sensorOrientation = rotation - getScreenOrientation();
-        LOGGER.i("Camera orientation relative to screen canvas: %d", sensorOrientation);
+        LOGGER.i("Camera orientation relative to screen canvas: %d (%d - %d)", sensorOrientation, rotation, getScreenOrientation());
 
         LOGGER.i("Initializing at size %dx%d", previewWidth, previewHeight);
         rgbFrameBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Config.ARGB_8888);
@@ -369,18 +365,6 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
                         augmenter.drawAugmentations(canvas);
                     }
                 });
-    }
-
-
-    protected void setArFragment() {
-
-        try {
-            arFragment = (ArFragment)
-                    getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
     }
 
     @Override

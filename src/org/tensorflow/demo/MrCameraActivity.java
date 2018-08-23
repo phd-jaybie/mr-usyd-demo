@@ -361,6 +361,7 @@ public abstract class MrCameraActivity extends FragmentActivity
 
     } catch (final Exception e) {
       LOGGER.e(e, "Exception!");
+      e.printStackTrace();
       Trace.endSection();
       return;
     }

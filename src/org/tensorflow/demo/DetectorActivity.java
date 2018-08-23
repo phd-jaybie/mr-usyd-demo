@@ -169,9 +169,9 @@ public class DetectorActivity extends MrCameraActivity implements OnImageAvailab
     previewHeight = size.getHeight();
 
     sensorOrientation = rotation - getScreenOrientation();
-    LOGGER.i("Camera orientation relative to screen canvas: %d", sensorOrientation);
+    LOGGER.i("Camera orientation relative to screen canvas: %d (%d - %d)", sensorOrientation, rotation, getScreenOrientation());
 
-    LOGGER.i("Initializing at size %dx%d", previewWidth, previewHeight);
+    LOGGER.i("Initializing at size %dx%d (WxH)", previewWidth, previewHeight);
     rgbFrameBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Config.ARGB_8888);
     croppedBitmap = Bitmap.createBitmap(cropSize, cropSize, Config.ARGB_8888);
 

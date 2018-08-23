@@ -514,9 +514,9 @@ public class MainActivity extends Activity {
 
     public void mrDemoDetectionWithARCoreIntent(View view){
 
-        if (!checkListDemo()) {
+/*        if (!checkListDemo()) {
             return;
-        }
+        }*/
 
         Intent detectorIntent = new Intent(this, MrDemoDetectorWithARCoreActivity.class);
         detectorIntent.putExtra("InputSize", inputSize);
