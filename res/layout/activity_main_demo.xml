@@ -172,6 +172,14 @@
         android:onClick="mrDemoDetectionIntent"
         android:text="@string/activity_name_mr_demo_detection" />
 
+    <Button
+        android:id="@+id/mr_detection_with_arcore"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/margin_small"
+        android:onClick="mrDemoDetectionWithARCoreIntent"
+        android:text="@string/activity_name_mr_demo_arcore" />
+
     <ListView
         android:id="@+id/listview"
         android:layout_width="wrap_content"

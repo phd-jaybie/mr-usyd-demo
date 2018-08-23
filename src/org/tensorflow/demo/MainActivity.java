@@ -26,6 +26,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.opencv.android.OpenCVLoader;
+import org.tensorflow.demo.arcore.MrDemoDetectorWithARCoreActivity;
 import org.tensorflow.demo.env.Logger;
 import org.tensorflow.demo.initializer.ObjectReferenceList;
 import org.tensorflow.demo.initializer.ReferenceObject;
@@ -177,7 +178,16 @@ public class MainActivity extends Activity {
                     new StableArrayAdapter(this, R.layout.list_object, list);
             listview.setAdapter(adapter);
 
-            listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            listview.setOnItemClickListener((parent, view, position, id) -> {
+
+                ReferenceObject object = list.get(position);
+                object.toggleSensitivity();
+                list.set(position,object);
+                adapter.notifyDataSetChanged();
+                view.setAlpha(1);
+            });
+
+/*            listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
                 @Override
                 public void onItemClick(AdapterView<?> parent, final View view,
@@ -190,7 +200,7 @@ public class MainActivity extends Activity {
                     view.setAlpha(1);
                 }
 
-            });
+            });*/
         }
     }
 
@@ -493,6 +503,22 @@ public class MainActivity extends Activity {
         }
 
         Intent detectorIntent = new Intent(this, MrDemoDetectorActivity.class);
+        detectorIntent.putExtra("InputSize", inputSize);
+        detectorIntent.putExtra("FastDebug", FastDebug);
+
+        backStack.addNextIntentWithParentStack(detectorIntent);
+        backStack.startActivities();
+        //startActivity(detectorIntent);
+
+    }
+
+    public void mrDemoDetectionWithARCoreIntent(View view){
+
+        if (!checkListDemo()) {
+            return;
+        }
+
+        Intent detectorIntent = new Intent(this, MrDemoDetectorWithARCoreActivity.class);
         detectorIntent.putExtra("InputSize", inputSize);
         detectorIntent.putExtra("FastDebug", FastDebug);
 
