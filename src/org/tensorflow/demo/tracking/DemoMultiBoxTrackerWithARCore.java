@@ -27,6 +27,8 @@ import android.graphics.Paint.Cap;
 import android.graphics.Paint.Join;
 import android.graphics.Paint.Style;
 import android.graphics.Path;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.SystemClock;
@@ -62,7 +64,6 @@ import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.env.Logger;
 import org.tensorflow.demo.initializer.ObjectReferenceList;
 
-import java.sql.Ref;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -78,7 +79,7 @@ import static org.tensorflow.demo.MrCameraActivity.MIN_MATCH_COUNT;
  * objects to new detections.
  */
 
-public class DemoMultiBoxTracker {
+public class DemoMultiBoxTrackerWithARCore {
 
     private int minMatchCount = Math.round(MIN_MATCH_COUNT*10/30);
 
@@ -95,6 +96,8 @@ public class DemoMultiBoxTracker {
     private static final float MAX_OVERLAP = 0.2f;
 
     private static final float MIN_SIZE = 16.0f;
+
+    private static int privilegeLevel = 0;
 
     // Allow replacement of the tracked box with new results if
     // correlation has dropped below this level.
@@ -180,7 +183,7 @@ public class DemoMultiBoxTracker {
 
     private Bitmap coverBitmap;
 
-    public DemoMultiBoxTracker(final Context context) {
+    public DemoMultiBoxTrackerWithARCore(final Context context) {
         this.context = context;
         for (final int color : COLORS) {
             availableColors.add(color);
@@ -204,48 +207,52 @@ public class DemoMultiBoxTracker {
 
     }
 
+    public void setPrivilege(int privilege){
+        privilegeLevel = privilege;
+    }
+
     private Matrix getFrameToCanvasMatrix() {
     return frameToCanvasMatrix;
     }
 
-    public synchronized void drawDebug(final Canvas canvas) {
-        logger.i("Entered drawDebug");
-        final Paint textPaint = new Paint();
-        textPaint.setColor(Color.WHITE);
-        textPaint.setTextSize(60.0f);
-
-        final Paint boxPaint = new Paint();
-        boxPaint.setColor(Color.RED);
-        boxPaint.setAlpha(200);
-        boxPaint.setStyle(Style.STROKE);
-
-        for (final Pair<Float, RectF> detection : screenRects) {
-          final RectF rect = detection.second;
-          canvas.drawRect(rect, boxPaint);
-          canvas.drawText("" + detection.first, rect.left, rect.top, textPaint);
-          borderedText.drawText(canvas, rect.centerX(), rect.centerY(), "" + detection.first);
-        }
-
-        if (objectTracker == null) {
-          logger.i("DrawDebug: Object Tracker is null.");
-          return;
-        }
-
-        // Draw correlations.
-        for (final TrackedRecognition recognition : trackedObjects) {
-          final ObjectTracker.TrackedObject trackedObject = recognition.trackedObject;
-
-          final RectF trackedPos = trackedObject.getTrackedPositionInPreviewFrame();
-
-          if (getFrameToCanvasMatrix().mapRect(trackedPos)) {
-            final String labelString = String.format("%.2f", trackedObject.getCurrentCorrelation());
-            borderedText.drawText(canvas, trackedPos.right, trackedPos.bottom, labelString);
-          }
-        }
-
-        final Matrix matrix = getFrameToCanvasMatrix();
-        objectTracker.drawDebug(canvas, matrix);
-    }
+//    public synchronized void drawDebug(final Canvas canvas) {
+//        logger.i("Entered drawDebug");
+//        final Paint textPaint = new Paint();
+//        textPaint.setColor(Color.WHITE);
+//        textPaint.setTextSize(60.0f);
+//
+//        final Paint boxPaint = new Paint();
+//        boxPaint.setColor(Color.RED);
+//        boxPaint.setAlpha(200);
+//        boxPaint.setStyle(Style.STROKE);
+//
+//        for (final Pair<Float, RectF> detection : screenRects) {
+//          final RectF rect = detection.second;
+//          canvas.drawRect(rect, boxPaint);
+//          canvas.drawText("" + detection.first, rect.left, rect.top, textPaint);
+//          borderedText.drawText(canvas, rect.centerX(), rect.centerY(), "" + detection.first);
+//        }
+//
+//        if (objectTracker == null) {
+//          logger.i("DrawDebug: Object Tracker is null.");
+//          return;
+//        }
+//
+//        // Draw correlations.
+//        for (final TrackedRecognition recognition : trackedObjects) {
+//          final ObjectTracker.TrackedObject trackedObject = recognition.trackedObject;
+//
+//          final RectF trackedPos = trackedObject.getTrackedPositionInPreviewFrame();
+//
+//          if (getFrameToCanvasMatrix().mapRect(trackedPos)) {
+//            final String labelString = String.format("%.2f", trackedObject.getCurrentCorrelation());
+//            borderedText.drawText(canvas, trackedPos.right, trackedPos.bottom, labelString);
+//          }
+//        }
+//
+//        final Matrix matrix = getFrameToCanvasMatrix();
+//        objectTracker.drawDebug(canvas, matrix);
+//    }
 
     public synchronized void trackResults(
         final List<Recognition> results, final byte[] frame, final long timestamp) {
@@ -274,7 +281,7 @@ public class DemoMultiBoxTracker {
             (int) (multiplier * (rotated ? frameHeight : frameWidth)),
             (int) (multiplier * (rotated ? frameWidth : frameHeight)),
             sensorOrientation,
-            false);
+            false); // originally false
 
     for (final TrackedRecognition recognition : trackedObjects) {
       final RectF trackedPos =
@@ -344,7 +351,122 @@ public class DemoMultiBoxTracker {
     }
   }
 
-  private void refreshTrackedObjects(Bitmap frame){
+    public synchronized void drawSanitized(final Canvas canvas) {
+
+        RefFrame referenceFrame = RefFrame.getInstance();
+
+        final boolean rotated = sensorOrientation % 180 == 90;
+        final float multiplier =
+                Math.min(canvas.getHeight() / (float) (rotated ? frameWidth : frameHeight),
+                        canvas.getWidth() / (float) (rotated ? frameHeight : frameWidth));
+
+        logger.i("Tracker: (WxH) Preview dims: %dx%d; Canvas dims: %dx%d",
+                frameWidth,frameHeight,
+                canvas.getWidth(), canvas.getHeight());
+
+        frameToCanvasMatrix =
+                ImageUtils.getTransformationMatrix(
+                        frameWidth,
+                        frameHeight,
+                        canvas.getWidth(),
+                        canvas.getHeight(),
+                        sensorOrientation,
+                        false);
+/*                ImageUtils.getTransformationMatrix(
+                        frameWidth,
+                        frameHeight,
+                        (int) (multiplier * (rotated ? frameHeight : frameWidth)),
+                        (int) (multiplier * (rotated ? frameWidth : frameHeight)),
+                        sensorOrientation,
+                        false); // originally false*/
+
+        final int centerColor = referenceFrame
+                .refFrame
+                .getPixel(frameWidth/2,frameHeight/2);
+
+        //Draw Overlay
+        Paint sPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        sPaint.setColor(centerColor);
+        sPaint.setStyle(Paint.Style.FILL);
+        sPaint.setAlpha(250);
+
+        //Draw transparent shape
+        //sPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+        //canvas.drawRoundRect(circleRect, radius, radius, sPaint);
+
+        for (final TrackedRecognition recognition : trackedObjects) {
+            final RectF trackedPos =
+                    (objectTracker != null)
+                            ? recognition.trackedObject.getTrackedPositionInPreviewFrame()
+                            : new RectF(recognition.location);
+
+            getFrameToCanvasMatrix().mapRect(trackedPos);
+            boxPaint.setColor(recognition.color);
+
+            final float cornerSize = Math.min(trackedPos.width(), trackedPos.height()) / 8.0f;
+
+            logger.i("Privilege level = %d", privilegeLevel);
+            if (privilegeLevel==0) {
+                sPaint.setAlpha(255);
+                canvas.drawPaint(sPaint);
+                // just text
+            } else if (privilegeLevel==1) {
+                canvas.drawPaint(sPaint);
+                // centroid
+                if (!recognition.sensitivity) {
+
+                    canvas.drawCircle(trackedPos.centerX(), trackedPos.centerY(), cornerSize, boxPaint);
+
+                    final String labelString =
+                            !TextUtils.isEmpty(recognition.title)
+                                    ? String.format("%s %.2f", recognition.title, recognition.detectionConfidence)
+                                    : String.format("%.2f", recognition.detectionConfidence);
+                    borderedText.drawText(canvas, trackedPos.left + cornerSize, trackedPos.centerY() + cornerSize, labelString);
+                }
+            } else if (privilegeLevel==2) {
+                canvas.drawPaint(sPaint);
+                //Draw transparent shape
+                sPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+
+                if (!recognition.sensitivity) {
+
+                    canvas.drawRoundRect(trackedPos, cornerSize, cornerSize, boxPaint);
+
+                    final String labelString =
+                            !TextUtils.isEmpty(recognition.title)
+                                    ? String.format("%s %.2f", recognition.title, recognition.detectionConfidence)
+                                    : String.format("%.2f", recognition.detectionConfidence);
+                    borderedText.drawText(canvas, trackedPos.left + cornerSize, trackedPos.bottom, labelString);
+                }
+            } else if (privilegeLevel==3) {
+                canvas.drawPaint(sPaint);
+                //Draw transparent shape
+                sPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+
+                if (!recognition.sensitivity) {
+
+                    canvas.drawRoundRect(trackedPos, cornerSize, cornerSize, sPaint);
+
+                    final String labelString =
+                            !TextUtils.isEmpty(recognition.title)
+                                    ? String.format("%s %.2f", recognition.title, recognition.detectionConfidence)
+                                    : String.format("%.2f", recognition.detectionConfidence);
+                    borderedText.drawText(canvas, trackedPos.left + cornerSize, trackedPos.bottom, labelString);
+                }
+            } else {
+                canvas.drawRoundRect(trackedPos, cornerSize, cornerSize, boxPaint);
+
+                    final String labelString =
+                            !TextUtils.isEmpty(recognition.title)
+                                    ? String.format("%s %.2f", recognition.title, recognition.detectionConfidence)
+                                    : String.format("%.2f", recognition.detectionConfidence);
+                    borderedText.drawText(canvas, trackedPos.left + cornerSize, trackedPos.bottom, labelString);
+            }
+
+        }
+    }
+
+    private void refreshTrackedObjects(Bitmap frame){
 
     Iterator<TrackedRecognition> iterator = trackedObjects.iterator();
 
@@ -370,10 +492,10 @@ public class DemoMultiBoxTracker {
   }
 
   private boolean initialized = false;
-
+/*
   public void setInitialize(boolean set){
     initialized = set;
-  }
+  }*/
 
   public synchronized void onFrame(
       final int w,
@@ -425,167 +547,6 @@ public class DemoMultiBoxTracker {
     }
   }
 
-  public synchronized void FrameTracker(
-          final int w,
-          final int h,
-          final int sensorOrientation,
-          final Bitmap frame,
-          final long timestamp) {
-
-    if (trackedObjects.isEmpty()) {
-      logger.i("Nothing new to track.");
-      return;
-    }
-
-    // Update time and sensitivity, i.e. check for timeouts
-    refreshTrackedObjects(frame);
-
-    if (!initialized) {
-      cvTrackedObjects.clear();
-
-      logger.i("%d, Initializing CVTracker: %dx%d", timestamp, w, h);
-
-      for (final TrackedRecognition recognition: trackedObjects) {
-
-        if (recognition.title.contains("Marker")) {
-          // Should I add it to the CvTracked objects immediately?
-          continue;
-        }
-
-        CvTrackedRecognition cvTrackedRecognition = new CvTrackedRecognition();
-        Mat currentFrame = new Mat();
-
-        RectF location = recognition.location;
-        Rect roundedLocation = new Rect();
-        location.round(roundedLocation);
-
-/*
-        logger.i("%d, FrameW: %d, FrameH: %d", timestamp, frame.getWidth(), frame.getHeight());
-
-        logger.i("%d, Object: %s, RectFL: %f, RectFT: %f, RectFR: %f, RectFB: %f",
-                timestamp, recognition.title, location.left, location.top, location.right, location.bottom);
-
-        logger.i("%d, Object: %s, RectFX: %d, RectFY: %d, RectFW: %d, RectFH: %d",
-                timestamp, recognition.title,
-                roundedLocation.left,
-                roundedLocation.top,
-                roundedLocation.right - roundedLocation.left,
-                roundedLocation.bottom - roundedLocation.top
-        );
-*/
-
-        final Bitmap refImage = Bitmap.createBitmap(frame,
-                Math.abs(roundedLocation.left),
-                Math.abs(roundedLocation.top),
-                Math.min((roundedLocation.right - roundedLocation.left),(frame.getWidth()-Math.abs(roundedLocation.left))),
-                Math.min((roundedLocation.bottom - roundedLocation.top),(frame.getHeight()-Math.abs(roundedLocation.top)))
-        );
-
-        Utils.bitmapToMat(refImage, currentFrame);
-        logger.i("%d, MatW: %d, MatH: %d",
-                timestamp,
-                currentFrame.cols(),
-                currentFrame.rows());
-        final int coverColor = refImage.getPixel(0, 0);
-
-        cvTrackedRecognition.trackedRecognition = recognition;
-        cvTrackedRecognition.location = recognition.location;
-        cvTrackedRecognition.color = recognition.color;
-        cvTrackedRecognition.detectionConfidence = recognition.detectionConfidence;
-        cvTrackedRecognition.title = recognition.title;
-        cvTrackedRecognition.RefImageMat = currentFrame;
-        cvTrackedRecognition.trackedRecognition.coverColor = coverColor;
-
-        cvTrackedObjects.add(cvTrackedRecognition);
-      }
-
-      frameWidth = w;
-      frameHeight = h;
-      this.sensorOrientation = sensorOrientation;
-      initialized = true;
-      return;
-    }
-
-    if (cvTrackedObjects.isEmpty()){
-      logger.i("Nothing tracked.");
-      return;
-    }
-
-    //Mat H1 = histogram(prevFrame);
-    //Mat H2 = histogram(frame);
-    //double frameSimilarity = Imgproc.compareHist(H1, H2, Imgproc.CV_COMP_BHATTACHARYYA);
-
-    //logger.i("%d: Frame Correlation: %f", timestamp,frameSimilarity);
-
-    //Mat flow = calcOpticalFlow(prevFrame, frame);
-
-//    Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-//    try {
-//      Utils.matToBitmap(flow, bmp);
-//    } catch (CvException e) {
-//      logger.d("CV Exception",e.getMessage());
-//    }
-//
-//    FileOutputStream out = null;
-//    try {
-//      out = new FileOutputStream("flow.png");
-//      bmp.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
-//      // PNG is a lossless format, the compression factor (100) is ignored
-//    } catch (Exception e) {
-//      e.printStackTrace();
-//    } finally {
-//      try {
-//        if (out != null) {
-//          out.close();
-//        }
-//      } catch (IOException e) {
-//        e.printStackTrace();
-//      }
-//    }
-
-    //trackedObjects.clear(); // Does not have to be cleared everytime.
-
-    long start = System.currentTimeMillis();
-
-    List<Pair<Mat, TrackedRecognition>> refImageMats = new ArrayList<>();
-
-    // All TF tracked objects are tracked using ORB while no new
-    for (final CvTrackedRecognition cvTrackedRecognition: cvTrackedObjects){
-      logger.i("Tracking object: " + cvTrackedRecognition.title);
-
-      refImageMats.add(new Pair<>(cvTrackedRecognition.RefImageMat,cvTrackedRecognition.trackedRecognition));
-    }
-
-    orbTracker(timestamp,refImageMats, frame);
-
-/*    if (!results.isEmpty()) {
-      for (final TrackedRecognition result: results){
-        trackedObjects.add(result);
-      }
-    }*/
-
-    long end = System.currentTimeMillis() - start;
-    logger.i("CV Frame tracking time: %d", end);
-
-    //objectTracker.nextFrame(frame, null, timestamp, null, true);
-
-    // Clean up any objects not worth tracking any more.
-//    final LinkedList<TrackedRecognition> copyList =
-//            new LinkedList<TrackedRecognition>(trackedObjects);
-//    for (final TrackedRecognition recognition : copyList) {
-//      final ObjectTracker.TrackedObject trackedObject = recognition.trackedObject;
-//      final float correlation = trackedObject.getCurrentCorrelation();
-//      if (correlation < MIN_CORRELATION) {
-//        logger.v("Removing tracked object %s because NCC is %.2f", trackedObject, correlation);
-//        trackedObject.stopTracking();
-//        trackedObjects.remove(recognition);
-//
-//        availableColors.add(recognition.color);
-//      }
-//    }
-  }
-
-
     public synchronized void HomogFrameTracker(
             final int w,
             final int h,
@@ -605,80 +566,19 @@ public class DemoMultiBoxTracker {
         refreshTrackedObjects(frame);
 
 
-        if (!initialized) {
-            // This if statement waits for detections to arrive from the detectors.
-            //cvTrackedObjects.clear();
+//        if (!initialized) {
+//            // This if statement waits for detections to arrive from the detectors.
+//            //cvTrackedObjects.clear();
 
-            logger.i("%d, Initializing Homog-CV-Tracker: %dx%d", timestamp, w, h);
+//            logger.i("%d, Initializing Homog-CV-Tracker: %dx%d", timestamp, w, h);
 
-/*            for (final TrackedRecognition recognition: trackedObjects) {
-
-                //Mat currentFrame = new Mat();
-
-                RectF location = recognition.location;
-                Rect roundedLocation = new Rect();
-                location.round(roundedLocation);
-
-*//*                final Bitmap refImage = Bitmap.createBitmap(frame,
-                        Math.abs(roundedLocation.left),
-                        Math.abs(roundedLocation.top),
-                        Math.min(Math.abs(roundedLocation.right - roundedLocation.left), Math.abs(frame.getWidth() - Math.abs(roundedLocation.left))),
-                        Math.min(Math.abs(roundedLocation.bottom - roundedLocation.top), Math.abs(frame.getHeight() - Math.abs(roundedLocation.top)))
-                );*//*
-
-                *//*logger.i("%d, MatW: %d, MatH: %d",
-                        timestamp,
-                        currentFrame.cols(),
-                        currentFrame.rows());*//*
-                final int coverColor = frame.getPixel(Math.abs(roundedLocation.left), Math.abs(roundedLocation.top));
-
-                recognition.color = coverColor;
-
-            }*/
-
-            frameWidth = w;
-            frameHeight = h;
-            this.sensorOrientation = sensorOrientation;
-            initialized = true;
-            return;
-        }
-
-/*        if (cvTrackedObjects.isEmpty()){
-            logger.i("Nothing tracked.");
-            return;
-        }*/
-
-        //Mat H1 = histogram(prevFrame);
-        //Mat H2 = histogram(frame);
-        //double frameSimilarity = Imgproc.compareHist(H1, H2, Imgproc.CV_COMP_BHATTACHARYYA);
-
-        //logger.i("%d: Frame Correlation: %f", timestamp,frameSimilarity);
-
-        //Mat flow = calcOpticalFlow(prevFrame, frame);
-
-//    Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-//    try {
-//      Utils.matToBitmap(flow, bmp);
-//    } catch (CvException e) {
-//      logger.d("CV Exception",e.getMessage());
-//    }
-//
-//    FileOutputStream out = null;
-//    try {
-//      out = new FileOutputStream("flow.png");
-//      bmp.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
-//      // PNG is a lossless format, the compression factor (100) is ignored
-//    } catch (Exception e) {
-//      e.printStackTrace();
-//    } finally {
-//      try {
-//        if (out != null) {
-//          out.close();
+        frameWidth = w;
+        frameHeight = h;
+        this.sensorOrientation = sensorOrientation;
+//            initialized = true;
+//            return;
 //        }
-//      } catch (IOException e) {
-//        e.printStackTrace();
-//      }
-//    }
+
 
         //trackedObjects.clear(); // Does not have to be cleared everytime.
 
@@ -689,22 +589,6 @@ public class DemoMultiBoxTracker {
         long end = System.currentTimeMillis() - start;
         logger.i("CV (Homography-based) Frame tracking time: %d", end);
 
-        //objectTracker.nextFrame(frame, null, timestamp, null, true);
-
-        // Clean up any objects not worth tracking any more.
-//    final LinkedList<TrackedRecognition> copyList =
-//            new LinkedList<TrackedRecognition>(trackedObjects);
-//    for (final TrackedRecognition recognition : copyList) {
-//      final ObjectTracker.TrackedObject trackedObject = recognition.trackedObject;
-//      final float correlation = trackedObject.getCurrentCorrelation();
-//      if (correlation < MIN_CORRELATION) {
-//        logger.v("Removing tracked object %s because NCC is %.2f", trackedObject, correlation);
-//        trackedObject.stopTracking();
-//        trackedObjects.remove(recognition);
-//
-//        availableColors.add(recognition.color);
-//      }
-//    }
     }
 
     /**
@@ -815,32 +699,7 @@ public class DemoMultiBoxTracker {
             setFrame(frame);
 
         }
-//        for (TrackedRecognition recognition: copyList) {
-//
-//            // For every tracked object, update accordingly, i.e. warp previous loc according
-//            // to the computed homography.
-//            Mat obj_corners = new Mat(4,1, CvType.CV_32FC2);
-//            Mat scene_corners = new Mat(4,1,CvType.CV_32FC2);
-//
-//            obj_corners.put(0, 0, new double[] {0,0});
-//            obj_corners.put(1, 0, new double[] {refImage.width()-1,0});
-//            obj_corners.put(2, 0, new double[] {refImage.width()-1,refImage.height()-1});
-//            obj_corners.put(3, 0, new double[] {0,refImage.height()-1});
-//
-//            Core.perspectiveTransform(obj_corners,scene_corners,Homog);
-//
-//            MatOfPoint sceneCorners = new MatOfPoint();
-//            for (int i=0; i < scene_corners.rows(); i++) {
-//                Point point = new Point();
-//                point.set(scene_corners.get(i,0));
-//                points.add(point);
-//            }
-//            sceneCorners.fromList(points);
-//            mScenePoints.add(sceneCorners);
-//
-//            recognition.lastUpdate = SystemClock.uptimeMillis();;
-//            trackedObjects.add(recognition);
-//        }
+
     }
 
     private void orbTracker(long timestamp,

@@ -20,6 +20,7 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.media.ImageReader.OnImageAvailableListener;
 import android.os.SystemClock;
+import android.util.Log;
 import android.util.Size;
 import android.util.TypedValue;
 import android.widget.Toast;
@@ -286,6 +287,9 @@ public class MrDemoDetectorActivity extends MrCameraActivity implements OnImageA
                     @Override
                     public void drawCallback(final Canvas canvas) {
                         tracker.draw(canvas);
+/*                        LOGGER.i("(WxH) Preview dims: %dx%d; Canvas dims: %dx%d",
+                                previewWidth,previewHeight,
+                                canvas.getWidth(), canvas.getHeight());*/
 /*                        if (isDebug()) {
                             tracker.drawDebug(canvas);
                         }*/

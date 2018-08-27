@@ -83,7 +83,7 @@
 
         <activity android:name=".arcore.MrDemoDetectorWithARCoreActivity"
             android:parentActivityName=".MainActivity"
-            android:screenOrientation="portrait"
+            android:screenOrientation="locked"
             android:theme="@style/Theme.AppCompat"
             android:label="@string/activity_name_mr_demo_arcore">
         </activity>

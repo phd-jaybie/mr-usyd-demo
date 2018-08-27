@@ -25,9 +25,27 @@
         android:layout_alignParentBottom="true" />
 
     <org.tensorflow.demo.OverlayView
-        android:id="@+id/debug_overlay"
+        android:id="@+id/tracking_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentBottom="true" />
+
+    <org.tensorflow.demo.OverlayView
+        android:id="@+id/debug_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true" />
+
+    <SeekBar
+        android:id="@+id/seekBar"
+        style="@style/Widget.AppCompat.SeekBar.Discrete"
+        android:layout_width="339dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="30dp"
+        android:max="4"
+        android:progress="4"/>
 
 </RelativeLayout>

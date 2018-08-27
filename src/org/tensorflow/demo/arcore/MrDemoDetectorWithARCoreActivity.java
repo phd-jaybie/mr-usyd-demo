@@ -10,6 +10,7 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.media.Image;
 import android.media.ImageReader;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -21,11 +22,22 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.util.Size;
 import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.Surface;
+import android.widget.SeekBar;
 import android.widget.Toast;
 
+import com.google.ar.core.Anchor;
+import com.google.ar.core.HitResult;
+import com.google.ar.core.Plane;
+import com.google.ar.core.exceptions.NotYetAvailableException;
+import com.google.ar.sceneform.AnchorNode;
 import com.google.ar.sceneform.Camera;
+import com.google.ar.sceneform.rendering.ModelRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
+import com.google.ar.sceneform.ux.TransformableNode;
 
 import org.opencv.android.OpenCVLoader;
 import org.tensorflow.demo.Classifier;
@@ -42,6 +54,9 @@ import org.tensorflow.demo.simulator.App;
 import org.tensorflow.demo.simulator.AppRandomizer;
 import org.tensorflow.demo.simulator.Randomizer;
 import org.tensorflow.demo.simulator.SingletonAppList;
+import org.tensorflow.demo.tracking.DemoMultiBoxTracker;
+import org.tensorflow.demo.tracking.DemoMultiBoxTrackerWithARCore;
+import org.tensorflow.demo.tracking.MultiBoxTracker;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -54,6 +69,7 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
     private static final String TAG = MrDemoDetectorWithARCoreActivity.class.getName();
 
     private ArFragment fragment;
+    private ModelRenderable andyRenderable;
 
     //private PointerDrawable pointer = new PointerDrawable();
     private boolean isTracking;
@@ -183,6 +199,9 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
     private Matrix inputToCropTransform;
     private Matrix cropToInputTransform;
 
+    private OverlayView trackingOverlay;
+    private DemoMultiBoxTrackerWithARCore tracker;
+
     static {
         if(!OpenCVLoader.initDebug()){
             Log.d(TAG,"OpenCV not loaded");
@@ -190,7 +209,6 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
             Log.d(TAG,"OpenCV loaded");
         }
     }
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -201,14 +219,79 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
         fragment = (ArFragment)
                 getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment);
 
+        SeekBar seekBar = (SeekBar) findViewById(R.id.seekBar);
+
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser){
+                Toast toast = Toast.makeText(MrDemoDetectorWithARCoreActivity.this,
+                        "Privilege level set to " + progress, Toast.LENGTH_LONG);
+                toast.setGravity(Gravity.CENTER, 0, 0);
+                toast.show();
+                tracker.setPrivilege(progress);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar){
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+
+        });
+
         fragment.getArSceneView().getScene().setOnUpdateListener(frameTime -> {
             fragment.onUpdate(frameTime);
 
-            if (!initialized) initialize();
+            try {
+                Image image = fragment.getArSceneView().getArFrame().acquireCameraImage();
 
-            //onUpdate();
-            if (initialized) recognizeImage();
+                if (!initialized) initialize(image);
+                //onUpdate();
+                if (initialized) recognizeImage(image);
+            } catch (NotYetAvailableException e1) {
+                e1.printStackTrace();
+            }
+
         });
+
+        // When you build a Renderable, Sceneform loads its resources in the background while returning
+        // a CompletableFuture. Call thenAccept(), handle(), or check isDone() before calling get().
+        ModelRenderable.builder()
+                .setSource(this, R.raw.andy)
+                .build()
+                .thenAccept(renderable -> andyRenderable = renderable)
+                .exceptionally(
+                        throwable -> {
+                            Toast toast =
+                                    Toast.makeText(this, "Unable to load andy renderable", Toast.LENGTH_LONG);
+                            toast.setGravity(Gravity.CENTER, 0, 0);
+                            toast.show();
+                            Log.e(TAG,"Unable to load andy renderable");
+                            return null;
+                        });
+
+        fragment.setOnTapArPlaneListener(
+                (HitResult hitResult, Plane plane, MotionEvent motionEvent) -> {
+                    if (andyRenderable == null) {
+                        return;
+                    }
+
+                    // Create the Anchor.
+                    Anchor anchor = hitResult.createAnchor();
+                    AnchorNode anchorNode = new AnchorNode(anchor);
+                    anchorNode.setParent(fragment.getArSceneView().getScene());
+
+                    // Create the transformable andy and add it to the anchor.
+                    TransformableNode andy = new TransformableNode(fragment.getTransformationSystem());
+                    andy.setParent(anchorNode);
+                    andy.setRenderable(andyRenderable);
+                    andy.select();
+                });
 
         //initializeGallery();
         if (appList == null) {
@@ -218,15 +301,10 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
 
     }
 
-    private void initialize(){
-        try {
-            previewHeight = fragment.getArSceneView().getArFrame().acquireCameraImage().getHeight();
-            previewWidth = fragment.getArSceneView().getArFrame().acquireCameraImage().getWidth();
-        } catch (Exception e) {
-            //Log.e(TAG,e.getMessage());
-            e.printStackTrace();
-            return;
-        }
+    private void initialize(Image image){
+
+        previewHeight = image.getHeight();
+        previewWidth = image.getWidth();
 
         if ((previewWidth == 0 && previewHeight ==0)||(initialized)) return;
 
@@ -235,6 +313,8 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
                         TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, getResources().getDisplayMetrics());
         borderedText = new BorderedText(textSizePx);
         borderedText.setTypeface(Typeface.MONOSPACE);
+
+        tracker = new DemoMultiBoxTrackerWithARCore(this);
 
         // setting up a TF detector (a TF OD type)
         int cropSize = TF_OD_API_INPUT_SIZE;
@@ -317,17 +397,21 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
         inputToFrameTransform = new Matrix();
         frameToInputTransform.invert(inputToFrameTransform);
 
-/*        trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
+        trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
         trackingOverlay.addCallback(
                 new OverlayView.DrawCallback() {
                     @Override
                     public void drawCallback(final Canvas canvas) {
-                        tracker.draw(canvas);
-*//*                        if (isDebug()) {
+                        Log.i(TAG,String.format("(WxH) Preview dims: %dx%d; Canvas dims: %dx%d",
+                                previewWidth,previewHeight,
+                                canvas.getWidth(), canvas.getHeight()));
+                        //tracker.draw(canvas);
+                        tracker.drawSanitized(canvas);
+/*                        if (isDebug()) {
                             tracker.drawDebug(canvas);
-                        }*//*
+                        }*/
                     }
-                });*/
+                });
 
         /**
          * This following addCallback is declared in the MrThreadedCameraActivity class and is another method
@@ -339,9 +423,9 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
                     @Override
                     public void drawCallback(final Canvas canvas) {
 
-/*                        if (!isDebug()) {
+                        if (!isDebug()) {
                             return;
-                        }*/
+                        }
 
                         final Bitmap copy = cropCopyBitmap;
                         if (copy == null) {
@@ -483,7 +567,8 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
         }
     }
 
-    public void recognizeImage() {
+    public void recognizeImage(Image image) {
+
         Log.d(TAG,"Entered recognizeImage.");
 
         //We need wait until we have some size from onPreviewSizeChosen
@@ -494,7 +579,7 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
             rgbBytes = new int[previewWidth * previewHeight];
         }
         try {
-            final Image image = fragment.getArSceneView().getArFrame().acquireCameraImage();
+            //final Image image = fragment.getArSceneView().getArFrame().acquireCameraImage();
             Log.d(TAG,String.format("Acquired image with size %dx%d", image.getWidth(), image.getHeight()));
 
             if (image == null) {
@@ -599,6 +684,23 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
         }
     }
 
+    private boolean isDebug() {
+        return debug;
+    }
+
+    private void onSetDebug(final boolean debug) {}
+
+    @Override
+    public boolean onKeyDown(final int keyCode, final KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            debug = !debug;
+            requestRender();
+            //onSetDebug(debug);
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
     protected int[] getRgbBytes() {
         imageConverter.run();
         return rgbBytes;
@@ -619,14 +721,17 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
         ++timestamp;
         final long currTimestamp = timestamp;
         byte[] originalLuminance = getLuminance();
-/*        tracker.onFrame(
+
+        rgbFrameBitmap.setPixels(getRgbBytes(), 0, previewWidth, 0, 0, previewWidth, previewHeight);
+
+        tracker.HomogFrameTracker(
                 previewWidth,
                 previewHeight,
-                getLuminanceStride(),
                 sensorOrientation,
-                originalLuminance,
+                rgbFrameBitmap,
                 timestamp);
-        trackingOverlay.postInvalidate();*/
+
+        trackingOverlay.postInvalidate();
 
         // No mutex needed as this method is not reentrant.
         if (computingDetection) {
@@ -635,9 +740,9 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
         }
 
         computingDetection = true;
-        Log.i(TAG,"Preparing image " + currTimestamp + " for detection in bg thread.");
+        //tracker.setInitialize(false); // Signaling that a new initialization has to be done at the tracker.
 
-        rgbFrameBitmap.setPixels(getRgbBytes(), 0, previewWidth, 0, 0, previewWidth, previewHeight);
+        Log.i(TAG,"Preparing image " + currTimestamp + " for detection in bg thread.");
 
         if (luminanceCopy == null) {
             luminanceCopy = new byte[originalLuminance.length];
@@ -656,6 +761,9 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
                 new Runnable() {
                     @Override
                     public void run() {
+                        // Send to tracker the reference frame for tracking.
+                        tracker.setFrame(rgbFrameBitmap);
+
                         Log.i(TAG,"Running detection on image " + currTimestamp);
                         final long startTime = SystemClock.uptimeMillis();
                         final List<Classifier.Recognition> results = detector.recognizeImage(croppedBitmap);
@@ -704,8 +812,8 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
                             }
                         }
 
-/*                        tracker.trackResults(mappedRecognitions, luminanceCopy, currTimestamp);
-                        trackingOverlay.postInvalidate();*/
+                        tracker.trackResults(mappedRecognitions, luminanceCopy, currTimestamp);
+                        trackingOverlay.postInvalidate();
 
                         requestRender();
                         computingDetection = false;
