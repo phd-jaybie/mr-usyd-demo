@@ -60,6 +60,16 @@
                 </activity>
         -->
 
+        <!--provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="${applicationId}.ar.codelab.name.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/paths"/>
+        </provider-->
+
         <activity android:name=".MainActivity"
             android:screenOrientation="portrait"
             android:label="@string/activity_name_mr_main">
@@ -82,8 +92,9 @@
         </activity>
 
         <activity android:name=".arcore.MrDemoDetectorWithARCoreActivity"
+            android:configChanges="orientation"
             android:parentActivityName=".MainActivity"
-            android:screenOrientation="locked"
+            android:screenOrientation="sensor"
             android:theme="@style/Theme.AppCompat"
             android:label="@string/activity_name_mr_demo_arcore">
         </activity>

@@ -1,6 +1,8 @@
 package org.tensorflow.demo.arcore;
 
 import android.Manifest;
+import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -12,19 +14,20 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.os.Trace;
-import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.util.Size;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.PixelCopy;
 import android.view.Surface;
 import android.widget.SeekBar;
 import android.widget.Toast;
@@ -34,6 +37,7 @@ import com.google.ar.core.HitResult;
 import com.google.ar.core.Plane;
 import com.google.ar.core.exceptions.NotYetAvailableException;
 import com.google.ar.sceneform.AnchorNode;
+import com.google.ar.sceneform.ArSceneView;
 import com.google.ar.sceneform.Camera;
 import com.google.ar.sceneform.rendering.ModelRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
@@ -49,14 +53,11 @@ import org.tensorflow.demo.TensorFlowYoloDetector;
 import org.tensorflow.demo.env.BorderedText;
 import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.initializer.ObjectReferenceList;
-import org.tensorflow.demo.phd.MrDemoDetectorActivity;
 import org.tensorflow.demo.simulator.App;
 import org.tensorflow.demo.simulator.AppRandomizer;
 import org.tensorflow.demo.simulator.Randomizer;
 import org.tensorflow.demo.simulator.SingletonAppList;
-import org.tensorflow.demo.tracking.DemoMultiBoxTracker;
 import org.tensorflow.demo.tracking.DemoMultiBoxTrackerWithARCore;
-import org.tensorflow.demo.tracking.MultiBoxTracker;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -70,6 +71,7 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
 
     private ArFragment fragment;
     private ModelRenderable andyRenderable;
+    private SeekBar seekBar;
 
     //private PointerDrawable pointer = new PointerDrawable();
     private boolean isTracking;
@@ -79,6 +81,8 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
 
     private static final String PERMISSION_CAMERA = Manifest.permission.CAMERA;
     private static final String PERMISSION_STORAGE = Manifest.permission.WRITE_EXTERNAL_STORAGE;
+
+    private static int cropSize;
 
     // Configuration values for the prepackaged multibox model.
     private static final int MB_INPUT_SIZE = 224;
@@ -216,10 +220,13 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_arcore_container);
 
+/*        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(view -> takePhoto());*/
+
         fragment = (ArFragment)
                 getSupportFragmentManager().findFragmentById(R.id.sceneform_fragment);
 
-        SeekBar seekBar = (SeekBar) findViewById(R.id.seekBar);
+        seekBar = (SeekBar) findViewById(R.id.seekBar);
 
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
@@ -234,7 +241,6 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar){
-
             }
 
             @Override
@@ -301,6 +307,20 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        // Checks the orientation of the screen
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            Toast.makeText(this, "landscape", Toast.LENGTH_SHORT).show();
+            reconfigureViews();
+        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
+            Toast.makeText(this, "portrait", Toast.LENGTH_SHORT).show();
+            reconfigureViews();
+        }
+    }
+
     private void initialize(Image image){
 
         previewHeight = image.getHeight();
@@ -315,9 +335,10 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
         borderedText.setTypeface(Typeface.MONOSPACE);
 
         tracker = new DemoMultiBoxTrackerWithARCore(this);
+        tracker.setPrivilege(seekBar.getProgress());
 
         // setting up a TF detector (a TF OD type)
-        int cropSize = TF_OD_API_INPUT_SIZE;
+        cropSize = TF_OD_API_INPUT_SIZE;
         if (MODE == DetectorMode.YOLO) {
             detector =
                     TensorFlowYoloDetector.create(
@@ -361,50 +382,19 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
             }
         }
 
-        sensorOrientation = 90; //getScreenOrientation(); // rotation - getScreenOrientation();
-        Log.i(TAG,String.format("Camera orientation relative to screen canvas: %d", sensorOrientation));
-
-        Log.d(TAG,String.format("Initialized with preview size (WxH) %dx%d", previewWidth,previewHeight));
-
-        rgbFrameBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Bitmap.Config.ARGB_8888);
-        croppedBitmap = Bitmap.createBitmap(cropSize, cropSize, Bitmap.Config.ARGB_8888);
-        //inputBitmap = Bitmap.createBitmap(inputSize, inputSize, Config.ARGB_8888);
-
-        frameToCropTransform =
-                ImageUtils.getTransformationMatrix(
-                        previewWidth, previewHeight,
-                        cropSize, cropSize,
-                        sensorOrientation, MAINTAIN_ASPECT);
-
-        cropToFrameTransform = new Matrix();
-        frameToCropTransform.invert(cropToFrameTransform);
-
-        inputToCropTransform =
-                ImageUtils.getTransformationMatrix(
-                        inputSize, inputSize,
-                        cropSize, cropSize,
-                        sensorOrientation, MAINTAIN_ASPECT);
-
-        cropToInputTransform = new Matrix();
-        inputToCropTransform.invert(cropToInputTransform);
-
-        frameToInputTransform =
-                ImageUtils.getTransformationMatrix(
-                        previewWidth, previewHeight,
-                        inputSize, inputSize,
-                        sensorOrientation, MAINTAIN_ASPECT);
-
-        inputToFrameTransform = new Matrix();
-        frameToInputTransform.invert(inputToFrameTransform);
+        /**
+         * Called when the device rotates to adjust the views and processing accordingly.
+         */
+        reconfigureViews();
 
         trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
         trackingOverlay.addCallback(
                 new OverlayView.DrawCallback() {
                     @Override
                     public void drawCallback(final Canvas canvas) {
-                        Log.i(TAG,String.format("(WxH) Preview dims: %dx%d; Canvas dims: %dx%d",
+/*                        Log.i(TAG,String.format("(WxH) Preview dims: %dx%d; Canvas dims: %dx%d",
                                 previewWidth,previewHeight,
-                                canvas.getWidth(), canvas.getHeight()));
+                                canvas.getWidth(), canvas.getHeight()));*/
                         //tracker.draw(canvas);
                         tracker.drawSanitized(canvas);
 /*                        if (isDebug()) {
@@ -465,7 +455,7 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
                         //lines.add("Processed Frame: " + inputBitmap.getWidth() + "x" + inputBitmap.getWidth());
                         lines.add("Crop: " + copy.getWidth() + "x" + copy.getHeight());
                         lines.add("View: " + canvas.getWidth() + "x" + canvas.getHeight());
-                        //lines.add("Rotation: " + sensorOrientation);
+                        lines.add("Rotation: " + sensorOrientation);
                         lines.add("Frame processing time: " + lastProcessingTimeMs + "ms (Marker detection time: " + markerDetectionTime + ")");
 
                         borderedText.drawLines(canvas, 10, canvas.getHeight() - 10, lines);
@@ -473,6 +463,45 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
                 });
 
         initialized = true;
+    }
+
+    private void reconfigureViews(){
+        sensorOrientation = 90 - getScreenOrientation(); // rotation - getScreenOrientation(); 90; //
+        Log.i(TAG,String.format("Camera orientation relative to screen canvas: %d", sensorOrientation));
+
+        Log.d(TAG,String.format("Initialized with preview size (WxH) %dx%d", previewWidth,previewHeight));
+
+        rgbFrameBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Bitmap.Config.ARGB_8888);
+        croppedBitmap = Bitmap.createBitmap(cropSize, cropSize, Bitmap.Config.ARGB_8888);
+        //inputBitmap = Bitmap.createBitmap(inputSize, inputSize, Config.ARGB_8888);
+
+        frameToCropTransform =
+                ImageUtils.getTransformationMatrix(
+                        previewWidth, previewHeight,
+                        cropSize, cropSize,
+                        sensorOrientation, MAINTAIN_ASPECT);
+
+        cropToFrameTransform = new Matrix();
+        frameToCropTransform.invert(cropToFrameTransform);
+
+        inputToCropTransform =
+                ImageUtils.getTransformationMatrix(
+                        inputSize, inputSize,
+                        cropSize, cropSize,
+                        sensorOrientation, MAINTAIN_ASPECT);
+
+        cropToInputTransform = new Matrix();
+        inputToCropTransform.invert(cropToInputTransform);
+
+        frameToInputTransform =
+                ImageUtils.getTransformationMatrix(
+                        previewWidth, previewHeight,
+                        inputSize, inputSize,
+                        sensorOrientation, MAINTAIN_ASPECT);
+
+        inputToFrameTransform = new Matrix();
+        frameToInputTransform.invert(inputToFrameTransform);
+
     }
 
     protected void getAppList(){

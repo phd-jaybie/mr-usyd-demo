@@ -18,6 +18,7 @@ package org.tensorflow.demo;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
+import android.view.SurfaceView;
 import android.view.View;
 import java.util.LinkedList;
 import java.util.List;

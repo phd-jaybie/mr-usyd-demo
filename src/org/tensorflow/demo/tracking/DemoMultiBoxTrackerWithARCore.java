@@ -36,6 +36,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
+import android.widget.SeekBar;
 import android.widget.Toast;
 
 import org.opencv.android.Utils;
@@ -97,7 +98,7 @@ public class DemoMultiBoxTrackerWithARCore {
 
     private static final float MIN_SIZE = 16.0f;
 
-    private static int privilegeLevel = 0;
+    private static int privilegeLevel;
 
     // Allow replacement of the tracked box with new results if
     // correlation has dropped below this level.

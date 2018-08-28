@@ -6,22 +6,23 @@
     </shared>
   </component>
   <component name="AndroidLogFilters">
-    <option name="TOOL_WINDOW_CUSTOM_FILTER" value="privi" />
+    <option name="TOOL_WINDOW_CUSTOM_FILTER" value="camera ori" />
     <option name="TOOL_WINDOW_LOG_LEVEL" value="verbose" />
     <option name="TOOL_WINDOW_CONFIGURED_FILTER" value="Show only selected application" />
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5c7b7419-d4d3-4a2b-a1f8-ed0da6843487" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/caches/build_file_checksums.ser" afterPath="$PROJECT_DIR$/.idea/caches/build_file_checksums.ser" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Gradle__com_android_support_constraint_constraint_layout_1_1_2.xml" afterPath="" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Gradle__com_android_support_constraint_constraint_layout_solver_1_1_2_jar.xml" afterPath="" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Gradle__com_android_support_recyclerview_v7_26_1_0.xml" afterPath="" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change beforePath="$PROJECT_DIR$/AndroidManifest.xml" afterPath="$PROJECT_DIR$/AndroidManifest.xml" />
       <change beforePath="$PROJECT_DIR$/build.gradle" afterPath="$PROJECT_DIR$/build.gradle" />
       <change beforePath="$PROJECT_DIR$/res/layout/activity_arcore_container.xml" afterPath="$PROJECT_DIR$/res/layout/activity_arcore_container.xml" />
-      <change beforePath="$PROJECT_DIR$/res/layout/camera_connection_fragment_augmented.xml" afterPath="$PROJECT_DIR$/res/layout/camera_connection_fragment_augmented.xml" />
+      <change beforePath="$PROJECT_DIR$/src/org/tensorflow/demo/OverlayView.java" afterPath="$PROJECT_DIR$/src/org/tensorflow/demo/OverlayView.java" />
       <change beforePath="$PROJECT_DIR$/src/org/tensorflow/demo/arcore/MrDemoDetectorWithARCoreActivity.java" afterPath="$PROJECT_DIR$/src/org/tensorflow/demo/arcore/MrDemoDetectorWithARCoreActivity.java" />
-      <change beforePath="$PROJECT_DIR$/src/org/tensorflow/demo/phd/MrDemoDetectorActivity.java" afterPath="$PROJECT_DIR$/src/org/tensorflow/demo/phd/MrDemoDetectorActivity.java" />
-      <change beforePath="$PROJECT_DIR$/src/org/tensorflow/demo/phd/MrInitializeDemoDetectorActivity.java" afterPath="$PROJECT_DIR$/src/org/tensorflow/demo/phd/MrInitializeDemoDetectorActivity.java" />
-      <change beforePath="$PROJECT_DIR$/src/org/tensorflow/demo/tracking/DemoMultiBoxTracker.java" afterPath="$PROJECT_DIR$/src/org/tensorflow/demo/tracking/DemoMultiBoxTracker.java" />
+      <change beforePath="$PROJECT_DIR$/src/org/tensorflow/demo/tracking/DemoMultiBoxTrackerWithARCore.java" afterPath="$PROJECT_DIR$/src/org/tensorflow/demo/tracking/DemoMultiBoxTrackerWithARCore.java" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -47,8 +48,8 @@
       <file leaf-file-name="DetectorActivity.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/DetectorActivity.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-67">
-              <caret line="125" column="6" lean-forward="false" selection-start-line="125" selection-start-column="0" selection-end-line="126" selection-end-column="0" />
+            <state relative-caret-position="175">
+              <caret line="170" column="55" lean-forward="false" selection-start-line="170" selection-start-column="35" selection-end-line="170" selection-end-column="55" />
               <folding />
             </state>
           </provider>
@@ -57,18 +58,18 @@
       <file leaf-file-name="MrCameraActivity.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/MrCameraActivity.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="5133">
-              <caret line="632" column="19" lean-forward="false" selection-start-line="632" selection-start-column="19" selection-end-line="632" selection-end-column="19" />
+            <state relative-caret-position="245">
+              <caret line="602" column="0" lean-forward="false" selection-start-line="602" selection-start-column="0" selection-end-line="613" selection-end-column="3" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="MainActivity.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/MainActivity.java">
+      <file leaf-file-name="OverlayView.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/OverlayView.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="5803">
-              <caret line="518" column="6" lean-forward="false" selection-start-line="518" selection-start-column="6" selection-end-line="518" selection-end-column="6" />
+            <state relative-caret-position="60">
+              <caret line="23" column="22" lean-forward="false" selection-start-line="23" selection-start-column="22" selection-end-line="23" selection-end-column="22" />
               <folding />
             </state>
           </provider>
@@ -76,65 +77,99 @@
       </file>
       <file leaf-file-name="activity_arcore_container.xml" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/res/layout/activity_arcore_container.xml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="480">
+              <caret line="49" column="27" lean-forward="false" selection-start-line="49" selection-start-column="27" selection-end-line="49" selection-end-column="27" />
+              <folding />
+            </state>
+          </provider>
           <provider editor-type-id="android-designer2">
             <state />
           </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="MrDemoDetectorWithARCoreActivity.java" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/arcore/MrDemoDetectorWithARCoreActivity.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="406">
-              <caret line="48" column="27" lean-forward="false" selection-start-line="48" selection-start-column="27" selection-end-line="48" selection-end-column="27" />
+            <state relative-caret-position="6494">
+              <caret line="385" column="33" lean-forward="false" selection-start-line="385" selection-start-column="33" selection-end-line="385" selection-end-column="33" />
+              <folding>
+                <element signature="imports" expanded="true" />
+                <element signature="method#onStartTrackingTouch#0;class#8860:9536" expanded="false" />
+                <element signature="method#onStopTrackingTouch#0;class#8860:9536" expanded="false" />
+                <element signature="e#27225#27226#0" expanded="true" />
+                <element signature="e#27253#27254#0" expanded="true" />
+                <element signature="e#27808#27809#0" expanded="true" />
+                <element signature="e#27841#27842#0" expanded="true" />
+                <element signature="e#27880#27881#0" expanded="true" />
+                <element signature="e#27914#27915#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="build.gradle" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/build.gradle">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="505">
+              <caret line="246" column="0" lean-forward="false" selection-start-line="246" selection-start-column="0" selection-end-line="246" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="MrDemoDetectorWithARCoreActivity.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/arcore/MrDemoDetectorWithARCoreActivity.java">
+      <file leaf-file-name="DemoMultiBoxTrackerWithARCore.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/tracking/DemoMultiBoxTrackerWithARCore.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="303">
-              <caret line="231" column="47" lean-forward="false" selection-start-line="231" selection-start-column="47" selection-end-line="231" selection-end-column="47" />
+            <state relative-caret-position="-9">
+              <caret line="13" column="80" lean-forward="true" selection-start-line="13" selection-start-column="80" selection-end-line="13" selection-end-column="80" />
               <folding>
-                <element signature="imports" expanded="true" />
-                <element signature="method#onStartTrackingTouch#0;class#8691:9368" expanded="false" />
-                <element signature="method#onStopTrackingTouch#0;class#8691:9368" expanded="false" />
-                <element signature="e#26250#26251#0" expanded="true" />
-                <element signature="e#26278#26279#0" expanded="true" />
-                <element signature="e#26833#26834#0" expanded="true" />
-                <element signature="e#26866#26867#0" expanded="true" />
-                <element signature="e#26905#26906#0" expanded="true" />
-                <element signature="e#26939#26940#0" expanded="true" />
+                <element signature="e#7002#7065#0" expanded="false" />
+                <element signature="method#draw#0;class#DemoMultiBoxTrackerWithARCore#0" expanded="false" />
+                <element signature="method#orbTracker#0;class#DemoMultiBoxTrackerWithARCore#0" expanded="false" />
               </folding>
             </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="AndroidManifest.xml" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/AndroidManifest.xml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="191">
+              <caret line="86" column="0" lean-forward="false" selection-start-line="86" selection-start-column="0" selection-end-line="86" selection-end-column="0" />
+              <folding>
+                <element signature="e#1440#1458#0" expanded="true" />
+                <element signature="e#3222#3253#0" expanded="true" />
+                <element signature="e#3670#3711#0" expanded="true" />
+                <element signature="e#3935#3977#0" expanded="true" />
+                <element signature="e#4301#4339#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+          <provider editor-type-id="android-manifest">
+            <state />
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="paths.xml" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/res/xml/paths.xml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="45">
+              <caret line="3" column="8" lean-forward="false" selection-start-line="3" selection-start-column="8" selection-end-line="3" selection-end-column="8" />
+              <folding />
+            </state>
+          </provider>
+          <provider editor-type-id="android-designer2">
+            <state />
           </provider>
         </entry>
       </file>
       <file leaf-file-name="MrDemoDetectorActivity.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/phd/MrDemoDetectorActivity.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="319">
-              <caret line="289" column="2" lean-forward="false" selection-start-line="289" selection-start-column="0" selection-end-line="291" selection-end-column="73" />
+            <state relative-caret-position="77">
+              <caret line="168" column="29" lean-forward="false" selection-start-line="168" selection-start-column="16" selection-end-line="168" selection-end-column="35" />
               <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="DemoMultiBoxTrackerWithARCore.java" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/tracking/DemoMultiBoxTrackerWithARCore.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="535">
-              <caret line="463" column="13" lean-forward="false" selection-start-line="463" selection-start-column="13" selection-end-line="463" selection-end-column="13" />
-              <folding>
-                <element signature="e#4287#4296#0" expanded="true" />
-                <element signature="e#4405#4425#0" expanded="true" />
-                <element signature="e#4918#4938#0" expanded="true" />
-                <element signature="e#6845#6846#0" expanded="true" />
-                <element signature="e#6887#6888#0" expanded="true" />
-                <element signature="e#6975#7038#0" expanded="false" />
-                <element signature="method#draw#0;class#DemoMultiBoxTrackerWithARCore#0" expanded="false" />
-                <element signature="method#orbTracker#0;class#DemoMultiBoxTrackerWithARCore#0" expanded="false" />
-                <element signature="e#32363#32383#0" expanded="true" />
-                <element signature="e#38853#38879#0" expanded="true" />
-                <element signature="e#42438#42458#0" expanded="true" />
-              </folding>
             </state>
           </provider>
         </entry>
@@ -147,18 +182,15 @@
         <option value="layoutResourceFile_vertical" />
         <option value="Class" />
         <option value="layoutResourceFile" />
+        <option value="resourceFile" />
       </list>
     </option>
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>bordered</find>
-      <find>sensor</find>
-      <find>imageConverter</find>
       <find>appList</find>
       <find>handler</find>
       <find>inputSize</find>
-      <find>getScreenOrientation</find>
       <find>TF_OD_API_INPUT_SIZE</find>
       <find>inputBitmap</find>
       <find>getScreen</find>
@@ -179,9 +211,13 @@
       <find>draw</find>
       <find>track</find>
       <find>OnSeekBarChangeListener</find>
+      <find>getAppList</find>
       <find>coverColor</find>
       <find>setIni</find>
-      <find>getAppList</find>
+      <find>plane</find>
+      <find>rotation</find>
+      <find>getScree</find>
+      <find>getScreenOrientation</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -2360,15 +2396,17 @@
         <option value="$PROJECT_DIR$/src/org/tensorflow/demo/MainActivity.java" />
         <option value="$PROJECT_DIR$/src/org/tensorflow/demo/MrCameraActivity.java" />
         <option value="$PROJECT_DIR$/sampledata/models/Cabin.sfa" />
-        <option value="$PROJECT_DIR$/build.gradle" />
-        <option value="$PROJECT_DIR$/AndroidManifest.xml" />
         <option value="$PROJECT_DIR$/res/layout/camera_connection_fragment_augmented.xml" />
         <option value="$PROJECT_DIR$/src/org/tensorflow/demo/tracking/DemoMultiBoxTracker.java" />
         <option value="$PROJECT_DIR$/src/org/tensorflow/demo/phd/MrDemoDetectorActivity.java" />
         <option value="$PROJECT_DIR$/src/org/tensorflow/demo/phd/MrInitializeDemoDetectorActivity.java" />
-        <option value="$PROJECT_DIR$/src/org/tensorflow/demo/arcore/MrDemoDetectorWithARCoreActivity.java" />
-        <option value="$PROJECT_DIR$/src/org/tensorflow/demo/tracking/DemoMultiBoxTrackerWithARCore.java" />
+        <option value="$PROJECT_DIR$/res/xml/paths.xml" />
+        <option value="$PROJECT_DIR$/src/org/tensorflow/demo/OverlayView.java" />
+        <option value="$PROJECT_DIR$/build.gradle" />
         <option value="$PROJECT_DIR$/res/layout/activity_arcore_container.xml" />
+        <option value="$PROJECT_DIR$/src/org/tensorflow/demo/tracking/DemoMultiBoxTrackerWithARCore.java" />
+        <option value="$PROJECT_DIR$/AndroidManifest.xml" />
+        <option value="$PROJECT_DIR$/src/org/tensorflow/demo/arcore/MrDemoDetectorWithARCoreActivity.java" />
       </list>
     </option>
   </component>
@@ -2460,9 +2498,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
-      <pane id="PackagesPane" />
-      <pane id="ProjectPane" />
       <pane id="AndroidView">
         <subPane>
           <expand>
@@ -2486,31 +2521,7 @@
               <item name="tf-with-opencv-demo" type="feadf853:AndroidModuleNode" />
               <item name="java" type="edd41e36:AndroidSourceTypeNode" />
               <item name="demo" type="cbb59c9e:AndroidPsiDirectoryNode" />
-              <item name="augmenting" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="tf-with-opencv-demo" type="1abcf292:AndroidViewProjectNode" />
-              <item name="tf-with-opencv-demo" type="feadf853:AndroidModuleNode" />
-              <item name="java" type="edd41e36:AndroidSourceTypeNode" />
-              <item name="demo" type="cbb59c9e:AndroidPsiDirectoryNode" />
               <item name="tracking" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="tf-with-opencv-demo" type="1abcf292:AndroidViewProjectNode" />
-              <item name="tf-with-opencv-demo" type="feadf853:AndroidModuleNode" />
-              <item name="res" type="d4f16f75:AndroidResFolderNode" />
-            </path>
-            <path>
-              <item name="tf-with-opencv-demo" type="1abcf292:AndroidViewProjectNode" />
-              <item name="tf-with-opencv-demo" type="feadf853:AndroidModuleNode" />
-              <item name="res" type="d4f16f75:AndroidResFolderNode" />
-              <item name="layout" type="ddeffd01:AndroidResFolderTypeNode" />
-            </path>
-            <path>
-              <item name="tf-with-opencv-demo" type="1abcf292:AndroidViewProjectNode" />
-              <item name="tf-with-opencv-demo" type="feadf853:AndroidModuleNode" />
-              <item name="res" type="d4f16f75:AndroidResFolderNode" />
-              <item name="raw" type="ddeffd01:AndroidResFolderTypeNode" />
             </path>
             <path>
               <item name="tf-with-opencv-demo" type="1abcf292:AndroidViewProjectNode" />
@@ -2520,7 +2531,10 @@
           <select />
         </subPane>
       </pane>
+      <pane id="ProjectPane" />
       <pane id="Scratches" />
+      <pane id="Scope" />
+      <pane id="PackagesPane" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -2722,31 +2736,31 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="-1177" width="1920" height="1177" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info id="Android Profiler" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Build Variants" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3210576" sideWeight="0.5021322" order="12" side_tool="true" content_ui="tabs" />
-      <window_info id="Viewer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32995737" sideWeight="0.5" order="9" side_tool="true" content_ui="tabs" />
-      <window_info id="Logcat" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.43437204" sideWeight="0.48933902" order="8" side_tool="false" content_ui="tabs" />
-      <window_info id="Capture Tool" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Build" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3286119" sideWeight="0.4936034" order="10" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Device File Explorer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="true" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Palette&#9;" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Image Layers" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Build Variants" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Capture Analysis" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.43437204" sideWeight="0.5127932" order="12" side_tool="true" content_ui="tabs" />
       <window_info id="Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3210576" sideWeight="0.4978678" order="11" side_tool="false" content_ui="tabs" />
+      <window_info id="Viewer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32995737" sideWeight="0.5" order="9" side_tool="true" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2049103" sideWeight="0.49573562" order="11" side_tool="false" content_ui="tabs" />
+      <window_info id="Logcat" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.43437204" sideWeight="0.48720682" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Captures" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24253732" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3295562" sideWeight="0.4978678" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Capture Tool" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18070363" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Build" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3286119" sideWeight="0.6279318" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Gradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Device File Explorer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="true" content_ui="tabs" />
       <window_info id="Theme Preview" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="true" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -2754,6 +2768,7 @@
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3295562" sideWeight="0.4978678" order="1" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="VcsContentAnnotationSettings">
@@ -2773,49 +2788,14 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/res/layout/camera_connection_fragment.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout/camera_connection_fragment_augmented.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="360">
-          <caret line="24" column="0" lean-forward="false" selection-start-line="24" selection-start-column="0" selection-end-line="27" selection-end-column="46" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/OverlayView.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
-          <caret line="30" column="34" lean-forward="false" selection-start-line="30" selection-start-column="34" selection-end-line="30" selection-end-column="34" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/MrCameraActivity.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="6195">
-          <caret line="472" column="0" lean-forward="true" selection-start-line="472" selection-start-column="0" selection-end-line="472" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/res/layout/camera_connection_fragment_stylize.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-176">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
         </state>
+      </provider>
+      <provider editor-type-id="android-designer2">
+        <state />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/augmenting/Augmenter.java">
@@ -2826,13 +2806,13 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/res/layout/camera_connection_fragment_tracking.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
         </state>
+      </provider>
+      <provider editor-type-id="android-designer2">
+        <state />
       </provider>
     </entry>
     <entry file="jar://$USER_HOME$/.gradle/caches/transforms-1/files-1.1/sceneform-ux-1.4.0.aar/8fbc8d20b52e675d976ed3cb74be3407/jars/classes.jar!/com/google/ar/sceneform/ux/ArFragment.class">
@@ -2872,13 +2852,13 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/res/layout/activity_camera.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="285">
           <caret line="19" column="31" lean-forward="false" selection-start-line="19" selection-start-column="31" selection-end-line="19" selection-end-column="31" />
         </state>
+      </provider>
+      <provider editor-type-id="android-designer2">
+        <state />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/res/layout/content_with_ar_core.xml" />
@@ -2897,36 +2877,36 @@
           <caret line="25" column="44" lean-forward="false" selection-start-line="25" selection-start-column="44" selection-end-line="25" selection-end-column="44" />
           <folding>
             <element signature="imports" expanded="true" />
-            <element signature="method#onStartTrackingTouch#0;class#8691:9368" expanded="false" />
-            <element signature="method#onStopTrackingTouch#0;class#8691:9368" expanded="false" />
-            <element signature="e#26250#26251#0" expanded="true" />
-            <element signature="e#26278#26279#0" expanded="true" />
-            <element signature="e#26833#26834#0" expanded="true" />
-            <element signature="e#26866#26867#0" expanded="true" />
-            <element signature="e#26905#26906#0" expanded="true" />
-            <element signature="e#26939#26940#0" expanded="true" />
+            <element signature="method#onStartTrackingTouch#0;class#8860:9536" expanded="false" />
+            <element signature="method#onStopTrackingTouch#0;class#8860:9536" expanded="false" />
+            <element signature="e#27225#27226#0" expanded="true" />
+            <element signature="e#27253#27254#0" expanded="true" />
+            <element signature="e#27808#27809#0" expanded="true" />
+            <element signature="e#27841#27842#0" expanded="true" />
+            <element signature="e#27880#27881#0" expanded="true" />
+            <element signature="e#27914#27915#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/res/layout/activity_main.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-600">
           <caret line="34" column="20" lean-forward="false" selection-start-line="34" selection-start-column="20" selection-end-line="34" selection-end-column="20" />
         </state>
       </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout/content_arcore.xml">
       <provider editor-type-id="android-designer2">
         <state />
       </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/res/layout/content_arcore.xml">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="135">
           <caret line="9" column="0" lean-forward="false" selection-start-line="9" selection-start-column="0" selection-end-line="16" selection-end-column="50" />
         </state>
+      </provider>
+      <provider editor-type-id="android-designer2">
+        <state />
       </provider>
     </entry>
     <entry file="jar://$USER_HOME$/Library/Android/sdk/platforms/android-27/android.jar!/android/widget/AdapterView.class">
@@ -2937,9 +2917,6 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/res/layout/activity_main_demo.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-7">
           <caret line="0" column="38" lean-forward="false" selection-start-line="0" selection-start-column="38" selection-end-line="0" selection-end-column="38" />
@@ -2950,6 +2927,9 @@
           </folding>
         </state>
       </provider>
+      <provider editor-type-id="android-designer2">
+        <state />
+      </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/openCVLibrary331dev/build.gradle">
       <provider selected="true" editor-type-id="text-editor">
@@ -2959,23 +2939,9 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/assets/3d/Cabin.sfb">
-      <provider selected="true" editor-type-id="SceneformSFB">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/assets/3d/andy.sfb">
-      <provider selected="true" editor-type-id="SceneformSFB">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/sampledata/models/Cabin.sfa">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="536">
-          <caret line="36" column="20" lean-forward="true" selection-start-line="36" selection-start-column="20" selection-end-line="36" selection-end-column="20" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/assets/3d/Cabin.sfb" />
+    <entry file="file://$PROJECT_DIR$/assets/3d/andy.sfb" />
+    <entry file="file://$PROJECT_DIR$/sampledata/models/Cabin.sfa" />
     <entry file="file://$PROJECT_DIR$/download-models.gradle">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -3014,70 +2980,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="276">
           <caret line="205" column="47" lean-forward="false" selection-start-line="205" selection-start-column="44" selection-end-line="205" selection-end-column="47" />
-          <folding>
-            <marker date="1534900380304" expanded="false" signature="0:104" ph="/.../" />
-            <marker date="1534900380304" expanded="false" signature="157:956" ph="..." />
-            <marker date="1534900380304" expanded="true" signature="1639:1898" ph="{...}" />
-            <marker date="1534900380304" expanded="true" signature="1943:2662" ph="{...}" />
-            <marker date="1534900380304" expanded="false" signature="2723:2734" ph=" { " />
-            <marker date="1534900380304" expanded="false" signature="2761:2767" ph=" }" />
-            <marker date="1534900380304" expanded="true" signature="2844:2929" ph="{...}" />
-            <marker date="1534900380304" expanded="false" signature="2964:2975" ph=" { " />
-            <marker date="1534900380304" expanded="false" signature="3002:3008" ph=" }" />
-            <marker date="1534900380304" expanded="true" signature="3060:3292" ph="{...}" />
-            <marker date="1534900380304" expanded="false" signature="3340:3351" ph=" { " />
-            <marker date="1534900380304" expanded="false" signature="3381:3387" ph=" }" />
-            <marker date="1534900380304" expanded="true" signature="3454:3715" ph="{...}" />
-            <marker date="1534900380304" expanded="false" signature="3751:3762" ph=" { " />
-            <marker date="1534900380304" expanded="false" signature="3789:3795" ph=" }" />
-            <marker date="1534900380304" expanded="true" signature="3880:3991" ph="{...}" />
-            <marker date="1534900380304" expanded="false" signature="4028:4039" ph=" { " />
-            <marker date="1534900380304" expanded="false" signature="4066:4072" ph=" }" />
-            <marker date="1534900380304" expanded="true" signature="4130:4215" ph="{...}" />
-            <marker date="1534900380304" expanded="false" signature="4254:4265" ph=" { " />
-            <marker date="1534900380304" expanded="false" signature="4294:4300" ph=" }" />
-            <marker date="1534900380304" expanded="true" signature="4362:4451" ph="{...}" />
-            <marker date="1534900380304" expanded="false" signature="4485:4496" ph=" { " />
-            <marker date="1534900380304" expanded="false" signature="4542:4548" ph=" }" />
-            <marker date="1534900380304" expanded="false" signature="4577:4588" ph=" { " />
-            <marker date="1534900380304" expanded="false" signature="4609:4615" ph=" }" />
-            <marker date="1534900380304" expanded="true" signature="4699:4770" ph="{...}" />
-            <marker date="1534900380304" expanded="true" signature="4842:5150" ph="{...}" />
-            <marker date="1534900380304" expanded="false" signature="5242:5253" ph=" { " />
-            <marker date="1534900380304" expanded="false" signature="5280:5286" ph=" }" />
-            <marker date="1534900380304" expanded="false" signature="5333:5344" ph=" { " />
-            <marker date="1534900380304" expanded="false" signature="5373:5379" ph=" }" />
-            <marker date="1534900380304" expanded="true" signature="5407:5599" ph="{...}" />
-            <marker date="1534900380304" expanded="true" signature="5646:5653" ph="{}" />
-            <marker date="1534900380304" expanded="true" signature="5686:5693" ph="{}" />
-            <marker date="1534900380304" expanded="true" signature="5756:5888" ph="{...}" />
-            <marker date="1534900380304" expanded="true" signature="5976:6248" ph="{...}" />
-            <marker date="1534900380304" expanded="true" signature="6342:12197" ph="{...}" />
-            <marker date="1534900380304" expanded="true" signature="6708:6719" ph="{}" />
-            <marker date="1534900380304" expanded="true" signature="6807:7042" ph="{...}" />
-            <marker date="1534900380304" expanded="true" signature="7103:7361" ph="{...}" />
-            <marker date="1534900380304" expanded="true" signature="7423:7553" ph="{...}" />
-            <marker date="1534900380304" expanded="true" signature="7615:7774" ph="{...}" />
-            <marker date="1534900380304" expanded="true" signature="7836:7924" ph="{...}" />
-            <marker date="1534900380304" expanded="true" signature="7961:8077" ph="{...}" />
-            <marker date="1534900380304" expanded="true" signature="8123:11731" ph="{...}" />
-            <marker date="1534900380304" expanded="true" signature="9126:9248" ph="{...}" />
-            <marker date="1534900380304" expanded="true" signature="11530:11665" ph="{...}" />
-            <marker date="1534900380304" expanded="true" signature="11777:11970" ph="{...}" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/raw/andy.sfb">
-      <provider selected="true" editor-type-id="SceneformSFB">
-        <state />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/build.gradle">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="499">
-          <caret line="247" column="1" lean-forward="false" selection-start-line="247" selection-start-column="1" selection-end-line="247" selection-end-column="1" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -3089,17 +2991,6 @@
             <element signature="e#6035#6036#0" expanded="false" />
             <element signature="e#6080#6081#0" expanded="false" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/AndroidManifest.xml">
-      <provider editor-type-id="android-manifest">
-        <state />
-      </provider>
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="60">
-          <caret line="69" column="19" lean-forward="false" selection-start-line="69" selection-start-column="19" selection-end-line="69" selection-end-column="19" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -3128,25 +3019,25 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/res/layout/camera_connection_fragment.xml">
-      <provider editor-type-id="android-designer2">
-        <state />
-      </provider>
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="98">
           <caret line="11" column="13" lean-forward="false" selection-start-line="11" selection-start-column="13" selection-end-line="11" selection-end-column="13" />
           <folding />
         </state>
       </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout/camera_connection_fragment_augmented.xml">
       <provider editor-type-id="android-designer2">
         <state />
       </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/res/layout/camera_connection_fragment_augmented.xml">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="166">
           <caret line="22" column="46" lean-forward="false" selection-start-line="22" selection-start-column="46" selection-end-line="22" selection-end-column="46" />
           <folding />
         </state>
+      </provider>
+      <provider editor-type-id="android-designer2">
+        <state />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/phd/MrInitializeDemoDetectorActivity.java">
@@ -3167,27 +3058,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/DetectorActivity.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-67">
-          <caret line="125" column="6" lean-forward="false" selection-start-line="125" selection-start-column="0" selection-end-line="126" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/OverlayView.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="420">
-          <caret line="50" column="0" lean-forward="false" selection-start-line="50" selection-start-column="0" selection-end-line="50" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="jar://$USER_HOME$/.gradle/caches/transforms-1/files-1.1/core-1.4.0.aar/8da14480fb562ab451fa607cd0dd23a6/jars/classes.jar!/com/google/ar/sceneform/Scene.class">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="270">
           <caret line="260" column="13" lean-forward="false" selection-start-line="260" selection-start-column="13" selection-end-line="260" selection-end-column="13" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -3195,90 +3069,190 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="225">
           <caret line="31" column="74" lean-forward="false" selection-start-line="31" selection-start-column="51" selection-end-line="31" selection-end-column="74" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.gradle/caches/transforms-1/files-1.1/sceneform-ux-1.4.0.aar/8fbc8d20b52e675d976ed3cb74be3407/jars/classes.jar!/com/google/ar/sceneform/ux/BaseArFragment.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="502">
+          <caret line="340" column="33" lean-forward="false" selection-start-line="340" selection-start-column="24" selection-end-line="340" selection-end-column="33" />
           <folding>
-            <marker date="1533519021189" expanded="false" signature="0:104" ph="/.../" />
-            <marker date="1533519021189" expanded="false" signature="138:196" ph="..." />
-            <marker date="1533519021189" expanded="true" signature="276:384" ph="{...}" />
-            <marker date="1533519021189" expanded="true" signature="442:550" ph="{...}" />
-            <marker date="1533519021189" expanded="true" signature="626:734" ph="{...}" />
-            <marker date="1533519021189" expanded="true" signature="827:935" ph="{...}" />
-            <marker date="1533519021189" expanded="true" signature="1015:1067" ph="{...}" />
-            <marker date="1533519021189" expanded="false" signature="1120:1131" ph=" { " />
-            <marker date="1533519021189" expanded="false" signature="1167:1173" ph=" }" />
-            <marker date="1533519021189" expanded="true" signature="1220:1396" ph="{...}" />
+            <marker date="1534900380247" expanded="false" signature="0:104" ph="/.../" />
+            <marker date="1534900380247" expanded="false" signature="150:2066" ph="..." />
+            <marker date="1534900380247" expanded="true" signature="2836:2843" ph="{}" />
+            <marker date="1534900380247" expanded="false" signature="2884:2895" ph=" { " />
+            <marker date="1534900380247" expanded="false" signature="2919:2925" ph=" }" />
+            <marker date="1534900380247" expanded="true" signature="2993:3046" ph="{...}" />
+            <marker date="1534900380247" expanded="false" signature="3105:3116" ph=" { " />
+            <marker date="1534900380247" expanded="false" signature="3149:3155" ph=" }" />
+            <marker date="1534900380247" expanded="true" signature="3265:3330" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="3454:4913" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="4157:4448" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="4219:4327" ph="{...}" />
+            <marker date="1534900380247" expanded="false" signature="4381:4404" ph=" { " />
+            <marker date="1534900380247" expanded="false" signature="4416:4434" ph=" }" />
+            <marker date="1534900380247" expanded="true" signature="4790:4858" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="5067:6049" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="6148:7446" ph="{...}" />
+            <marker date="1534900380247" expanded="false" signature="6472:6568" ph="onClick(dialog, which) → {" />
+            <marker date="1534900380247" expanded="false" signature="7012:7031" ph="}" />
+            <marker date="1534900380247" expanded="false" signature="7123:7210" ph="onDismiss(arg0) → {" />
+            <marker date="1534900380247" expanded="false" signature="7402:7421" ph="}" />
+            <marker date="1534900380247" expanded="true" signature="7506:7565" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="7660:7745" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="7774:7954" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="8001:9475" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="9539:10412" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="9961:10131" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="10162:10367" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="10622:10865" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="10893:10946" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="10976:11067" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="11151:11347" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="11395:11826" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="11853:12345" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="12371:12542" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="12640:12739" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="12795:13698" ph="{...}" />
+            <marker date="1534900380247" expanded="true" signature="13742:13820" ph="{...}" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/MrCameraActivity.java">
+    <entry file="jar://$USER_HOME$/Library/Android/sdk/platforms/android-27/android.jar!/android/view/PixelCopy.class">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="5133">
-          <caret line="632" column="19" lean-forward="false" selection-start-line="632" selection-start-column="19" selection-end-line="632" selection-end-column="19" />
+        <state relative-caret-position="-21">
+          <caret line="11" column="19" lean-forward="false" selection-start-line="11" selection-start-column="19" selection-end-line="11" selection-end-column="19" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/phd/MrDemoDetectorActivity.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="319">
-          <caret line="289" column="2" lean-forward="false" selection-start-line="289" selection-start-column="0" selection-end-line="291" selection-end-column="73" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/arcore/MrDemoDetectorWithARCoreActivity.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="303">
-          <caret line="231" column="47" lean-forward="false" selection-start-line="231" selection-start-column="47" selection-end-line="231" selection-end-column="47" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="method#onStartTrackingTouch#0;class#8691:9368" expanded="false" />
-            <element signature="method#onStopTrackingTouch#0;class#8691:9368" expanded="false" />
-            <element signature="e#26250#26251#0" expanded="true" />
-            <element signature="e#26278#26279#0" expanded="true" />
-            <element signature="e#26833#26834#0" expanded="true" />
-            <element signature="e#26866#26867#0" expanded="true" />
-            <element signature="e#26905#26906#0" expanded="true" />
-            <element signature="e#26939#26940#0" expanded="true" />
-          </folding>
-        </state>
+    <entry file="file://$PROJECT_DIR$/res/raw/andy.sfb">
+      <provider selected="true" editor-type-id="SceneformSFB">
+        <state />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/MainActivity.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="5803">
+        <state relative-caret-position="634">
           <caret line="518" column="6" lean-forward="false" selection-start-line="518" selection-start-column="6" selection-end-line="518" selection-end-column="6" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/res/layout/activity_arcore_container.xml">
+    <entry file="file://$PROJECT_DIR$/res/xml/paths.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="45">
+          <caret line="3" column="8" lean-forward="false" selection-start-line="3" selection-start-column="8" selection-end-line="3" selection-end-column="8" />
+          <folding />
+        </state>
+      </provider>
       <provider editor-type-id="android-designer2">
         <state />
       </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/phd/MrDemoDetectorActivity.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="406">
-          <caret line="48" column="27" lean-forward="false" selection-start-line="48" selection-start-column="27" selection-end-line="48" selection-end-column="27" />
+        <state relative-caret-position="77">
+          <caret line="168" column="29" lean-forward="false" selection-start-line="168" selection-start-column="16" selection-end-line="168" selection-end-column="35" />
           <folding />
         </state>
       </provider>
     </entry>
+    <entry file="jar://$USER_HOME$/Library/Android/sdk/platforms/android-27/android.jar!/android/app/Activity.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="396">
+          <caret line="92" column="25" lean-forward="false" selection-start-line="92" selection-start-column="25" selection-end-line="92" selection-end-column="25" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/DetectorActivity.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="175">
+          <caret line="170" column="55" lean-forward="false" selection-start-line="170" selection-start-column="35" selection-end-line="170" selection-end-column="55" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/MrCameraActivity.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="245">
+          <caret line="602" column="0" lean-forward="false" selection-start-line="602" selection-start-column="0" selection-end-line="613" selection-end-column="3" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/OverlayView.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="60">
+          <caret line="23" column="22" lean-forward="false" selection-start-line="23" selection-start-column="22" selection-end-line="23" selection-end-column="22" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/res/layout/activity_arcore_container.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="480">
+          <caret line="49" column="27" lean-forward="false" selection-start-line="49" selection-start-column="27" selection-end-line="49" selection-end-column="27" />
+          <folding />
+        </state>
+      </provider>
+      <provider editor-type-id="android-designer2">
+        <state />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/build.gradle">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="505">
+          <caret line="246" column="0" lean-forward="false" selection-start-line="246" selection-start-column="0" selection-end-line="246" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/AndroidManifest.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="191">
+          <caret line="86" column="0" lean-forward="false" selection-start-line="86" selection-start-column="0" selection-end-line="86" selection-end-column="0" />
+          <folding>
+            <element signature="e#1440#1458#0" expanded="true" />
+            <element signature="e#3222#3253#0" expanded="true" />
+            <element signature="e#3670#3711#0" expanded="true" />
+            <element signature="e#3935#3977#0" expanded="true" />
+            <element signature="e#4301#4339#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+      <provider editor-type-id="android-manifest">
+        <state />
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/tracking/DemoMultiBoxTrackerWithARCore.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="535">
-          <caret line="463" column="13" lean-forward="false" selection-start-line="463" selection-start-column="13" selection-end-line="463" selection-end-column="13" />
+        <state relative-caret-position="-9">
+          <caret line="13" column="80" lean-forward="true" selection-start-line="13" selection-start-column="80" selection-end-line="13" selection-end-column="80" />
           <folding>
-            <element signature="e#4287#4296#0" expanded="true" />
-            <element signature="e#4405#4425#0" expanded="true" />
-            <element signature="e#4918#4938#0" expanded="true" />
-            <element signature="e#6845#6846#0" expanded="true" />
-            <element signature="e#6887#6888#0" expanded="true" />
-            <element signature="e#6975#7038#0" expanded="false" />
+            <element signature="e#7002#7065#0" expanded="false" />
             <element signature="method#draw#0;class#DemoMultiBoxTrackerWithARCore#0" expanded="false" />
             <element signature="method#orbTracker#0;class#DemoMultiBoxTrackerWithARCore#0" expanded="false" />
-            <element signature="e#32363#32383#0" expanded="true" />
-            <element signature="e#38853#38879#0" expanded="true" />
-            <element signature="e#42438#42458#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/tensorflow/demo/arcore/MrDemoDetectorWithARCoreActivity.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="6494">
+          <caret line="385" column="33" lean-forward="false" selection-start-line="385" selection-start-column="33" selection-end-line="385" selection-end-column="33" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="method#onStartTrackingTouch#0;class#8860:9536" expanded="false" />
+            <element signature="method#onStopTrackingTouch#0;class#8860:9536" expanded="false" />
+            <element signature="e#27225#27226#0" expanded="true" />
+            <element signature="e#27253#27254#0" expanded="true" />
+            <element signature="e#27808#27809#0" expanded="true" />
+            <element signature="e#27841#27842#0" expanded="true" />
+            <element signature="e#27880#27881#0" expanded="true" />
+            <element signature="e#27914#27915#0" expanded="true" />
           </folding>
         </state>
       </provider>
