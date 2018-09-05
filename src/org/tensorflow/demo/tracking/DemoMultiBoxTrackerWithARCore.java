@@ -352,6 +352,8 @@ public class DemoMultiBoxTrackerWithARCore {
     }
   }
 
+//  private Paint sPaint;
+
     public synchronized void drawSanitized(final Canvas canvas) {
 
         RefFrame referenceFrame = RefFrame.getInstance();
@@ -395,6 +397,11 @@ public class DemoMultiBoxTrackerWithARCore {
         //sPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         //canvas.drawRoundRect(circleRect, radius, radius, sPaint);
 
+        if (privilegeLevel<=3) {
+            sPaint.setAlpha(255);
+            canvas.drawPaint(sPaint);
+        }
+
         for (final TrackedRecognition recognition : trackedObjects) {
             final RectF trackedPos =
                     (objectTracker != null)
@@ -407,16 +414,24 @@ public class DemoMultiBoxTrackerWithARCore {
             final float cornerSize = Math.min(trackedPos.width(), trackedPos.height()) / 8.0f;
 
             logger.i("Privilege level = %d", privilegeLevel);
+            if (recognition.sensitivity) {
+                //Do not draw if sensitive.
+                continue;
+            }
             if (privilegeLevel==0) {
                 sPaint.setAlpha(255);
                 canvas.drawPaint(sPaint);
                 // just text
             } else if (privilegeLevel==1) {
+                sPaint.setAlpha(250);
                 canvas.drawPaint(sPaint);
                 // centroid
                 if (!recognition.sensitivity) {
+                    Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                    fillPaint.setColor(recognition.color);
+                    fillPaint.setStyle(Paint.Style.FILL);
 
-                    canvas.drawCircle(trackedPos.centerX(), trackedPos.centerY(), cornerSize, boxPaint);
+                    canvas.drawCircle(trackedPos.centerX(), trackedPos.centerY(), 25, fillPaint);
 
                     final String labelString =
                             !TextUtils.isEmpty(recognition.title)
