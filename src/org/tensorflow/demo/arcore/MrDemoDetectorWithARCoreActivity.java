@@ -1,7 +1,6 @@
 package org.tensorflow.demo.arcore;
 
 import android.Manifest;
-import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -11,15 +10,11 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.media.Image;
-import android.media.ImageReader;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.os.Trace;
-import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.util.Size;
@@ -27,18 +22,17 @@ import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
-import android.view.PixelCopy;
 import android.view.Surface;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
 import com.google.ar.core.Anchor;
+import com.google.ar.core.Frame;
 import com.google.ar.core.HitResult;
 import com.google.ar.core.Plane;
+import com.google.ar.core.PointCloud;
 import com.google.ar.core.exceptions.NotYetAvailableException;
 import com.google.ar.sceneform.AnchorNode;
-import com.google.ar.sceneform.ArSceneView;
-import com.google.ar.sceneform.Camera;
 import com.google.ar.sceneform.rendering.ModelRenderable;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
@@ -50,6 +44,9 @@ import org.tensorflow.demo.R;
 import org.tensorflow.demo.TensorFlowMultiBoxDetector;
 import org.tensorflow.demo.TensorFlowObjectDetectionAPIModel;
 import org.tensorflow.demo.TensorFlowYoloDetector;
+import org.tensorflow.demo.arcore.common.rendering.BackgroundRenderer;
+import org.tensorflow.demo.arcore.common.rendering.PlaneRenderer;
+import org.tensorflow.demo.arcore.common.rendering.PointCloudRenderer;
 import org.tensorflow.demo.env.BorderedText;
 import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.initializer.ObjectReferenceList;
@@ -72,6 +69,12 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
     private ArFragment fragment;
     private ModelRenderable andyRenderable;
     private SeekBar seekBar;
+
+    private final BackgroundRenderer backgroundRenderer = new BackgroundRenderer();
+    //private final ObjectRenderer virtualObject = new ObjectRenderer();
+    //private final ObjectRenderer virtualObjectShadow = new ObjectRenderer();
+    private final PointCloudRenderer pointCloudRenderer = new PointCloudRenderer();
+    private final PlaneRenderer planeRenderer = new PlaneRenderer();
 
     //private PointerDrawable pointer = new PointerDrawable();
     private boolean isTracking;
@@ -259,6 +262,8 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
                 if (!initialized) initialize(image);
                 //onUpdate();
                 if (initialized) recognizeImage(image);
+
+                ARprocessing();
             } catch (NotYetAvailableException e1) {
                 e1.printStackTrace();
             }
@@ -304,6 +309,14 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
             singletonAppList = SingletonAppList.getInstance();
             getAppList();
         }
+
+    }
+
+    private void ARprocessing(){
+        Frame frame = fragment.getArSceneView().getArFrame();
+
+        PointCloud pointCloud = frame.acquirePointCloud();
+        Log.i(TAG,String.format("Number of points in pointCloud %d", pointCloud.getPoints().remaining()/4));
 
     }
 

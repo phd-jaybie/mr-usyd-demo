@@ -33,10 +33,8 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.SystemClock;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
-import android.widget.SeekBar;
 import android.widget.Toast;
 
 import org.opencv.android.Utils;
@@ -354,6 +352,47 @@ public class DemoMultiBoxTrackerWithARCore {
 
 //  private Paint sPaint;
 
+    /**
+     * This is the color management code for the sanitized Paint so that the color does not change
+     * as fast as the new frame just to make it look nicer.
+     */
+
+    private static class ColorManagement {
+        Integer prevColor;
+        int redP;
+        int greenP;
+        int blueP;
+
+        private ColorManagement(){
+        }
+
+        public void setPrevColor(int color){
+            this.prevColor = color;
+            this.redP = Color.red(color);
+            this.greenP = Color.green(color);
+            this.blueP = Color.blue(color);
+        }
+
+        public int getNewColor(int color){
+            int redC = Color.red(color);
+            int greenC = Color.green(color);
+            int blueC = Color.blue(color);
+
+            int redD = (redC - this.redP) % 8;
+            int greenD = (greenC - this.greenP) % 8;
+            int blueD = (blueC - this.blueP) % 8;
+
+            final int finalColor = Color.rgb(this.redP + redD,
+                    this.greenP + greenD,
+                    this.blueP + blueD);
+
+            return finalColor;
+        }
+
+    }
+
+    private static ColorManagement colorManager = new ColorManagement();
+
     public synchronized void drawSanitized(final Canvas canvas) {
 
         RefFrame referenceFrame = RefFrame.getInstance();
@@ -387,9 +426,14 @@ public class DemoMultiBoxTrackerWithARCore {
                 .refFrame
                 .getPixel(frameWidth/2,frameHeight/2);
 
+        if (colorManager.prevColor == null) colorManager.setPrevColor(centerColor);
+
+        final int finalColor = colorManager.getNewColor(centerColor);
+        colorManager.setPrevColor(finalColor);
+
         //Draw Overlay
         Paint sPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        sPaint.setColor(centerColor);
+        sPaint.setColor(finalColor);
         sPaint.setStyle(Paint.Style.FILL);
         sPaint.setAlpha(250);
 
@@ -397,11 +441,25 @@ public class DemoMultiBoxTrackerWithARCore {
         //sPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         //canvas.drawRoundRect(circleRect, radius, radius, sPaint);
 
-        if (privilegeLevel<=3) {
+        if (privilegeLevel==0) {
             sPaint.setAlpha(255);
             canvas.drawPaint(sPaint);
+        } else if (privilegeLevel ==1) {
+            sPaint.setAlpha(250);
+            canvas.drawPaint(sPaint);
+        } else if (privilegeLevel ==2) {
+            sPaint.setAlpha(240);
+            canvas.drawPaint(sPaint);
+            //Draw transparent shape
+            sPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+        } else if (privilegeLevel ==3) {
+            sPaint.setAlpha(230);
+            canvas.drawPaint(sPaint);
+            //Draw transparent shape
+            sPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         }
 
+        int ypos = 25;
         for (final TrackedRecognition recognition : trackedObjects) {
             final RectF trackedPos =
                     (objectTracker != null)
@@ -418,20 +476,37 @@ public class DemoMultiBoxTrackerWithARCore {
                 //Do not draw if sensitive.
                 continue;
             }
+
             if (privilegeLevel==0) {
-                sPaint.setAlpha(255);
-                canvas.drawPaint(sPaint);
-                // just text
+                ypos += 50;
+                final String labelString =
+                        !TextUtils.isEmpty(recognition.title)
+                                ? String.format("%s %.2f", recognition.title, recognition.detectionConfidence)
+                                : String.format("%.2f", recognition.detectionConfidence);
+                borderedText.drawText(canvas, 50, ypos, labelString);
             } else if (privilegeLevel==1) {
-                sPaint.setAlpha(250);
-                canvas.drawPaint(sPaint);
+                //sPaint.setAlpha(250);
+                //canvas.drawPaint(sPaint);
                 // centroid
                 if (!recognition.sensitivity) {
-                    Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+/*                    Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
                     fillPaint.setColor(recognition.color);
-                    fillPaint.setStyle(Paint.Style.FILL);
+                    fillPaint.setStyle(Paint.Style.FILL);*/
 
-                    canvas.drawCircle(trackedPos.centerX(), trackedPos.centerY(), 25, fillPaint);
+                    String drawableName = recognition.title;
+                    drawableName = drawableName.replace(" ","_");
+
+                    int drawableId = res.getIdentifier(drawableName, "drawable", context.getPackageName());
+
+                    logger.i(String.format("Drawables: %d: %s",drawableId,drawableName));
+
+                    if (drawableId==0) continue;
+
+                    Bitmap representationBitmap = BitmapFactory.decodeResource(res, drawableId);
+                    canvas.drawBitmap(representationBitmap,
+                            new Rect(0,0,representationBitmap.getWidth(),representationBitmap.getHeight()),
+                            trackedPos,
+                            sPaint);
 
                     final String labelString =
                             !TextUtils.isEmpty(recognition.title)
@@ -440,9 +515,10 @@ public class DemoMultiBoxTrackerWithARCore {
                     borderedText.drawText(canvas, trackedPos.left + cornerSize, trackedPos.centerY() + cornerSize, labelString);
                 }
             } else if (privilegeLevel==2) {
+/*                sPaint.setAlpha(250);
                 canvas.drawPaint(sPaint);
                 //Draw transparent shape
-                sPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+                sPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));*/
 
                 if (!recognition.sensitivity) {
 
@@ -455,11 +531,14 @@ public class DemoMultiBoxTrackerWithARCore {
                     borderedText.drawText(canvas, trackedPos.left + cornerSize, trackedPos.bottom, labelString);
                 }
             } else if (privilegeLevel==3) {
-                canvas.drawPaint(sPaint);
+/*                canvas.drawPaint(sPaint);
                 //Draw transparent shape
-                sPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+                sPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));*/
 
                 if (!recognition.sensitivity) {
+
+                    // If object is bigger than the canvas dimensions, do not print it.
+                    if (trackedPos.width()*trackedPos.height() > canvas.getWidth()*canvas.getHeight()) continue;
 
                     canvas.drawRoundRect(trackedPos, cornerSize, cornerSize, sPaint);
 

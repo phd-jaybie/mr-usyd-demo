@@ -319,7 +319,13 @@ public class DemoMultiBoxTracker {
                       1.1f*trackedPos.right,
                       0.9f*trackedPos.bottom);
 
-/*        canvas.drawBitmap(coverBitmap,
+/*             Bitmap bitmap = BitmapFactory.decodeResource(res, R.drawable.csiro);
+                canvas.drawBitmap(bitmap,
+                new Rect(0,0,bitmap.getWidth(),bitmap.getHeight()),
+                trackedPos,
+                boxPaint);
+
+                canvas.drawBitmap(coverBitmap,
                 new Rect(0,0,coverBitmap.getWidth(),coverBitmap.getHeight()),
                 trackedPos,
                 boxPaint);*/
