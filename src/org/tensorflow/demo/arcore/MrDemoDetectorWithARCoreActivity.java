@@ -5,6 +5,7 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorSpace;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
@@ -17,6 +18,7 @@ import android.os.SystemClock;
 import android.os.Trace;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.util.Pair;
 import android.util.Size;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -30,10 +32,20 @@ import com.google.ar.core.Anchor;
 import com.google.ar.core.Frame;
 import com.google.ar.core.HitResult;
 import com.google.ar.core.Plane;
+import com.google.ar.core.Point;
 import com.google.ar.core.PointCloud;
+import com.google.ar.core.Session;
+import com.google.ar.core.Trackable;
+import com.google.ar.core.TrackingState;
 import com.google.ar.core.exceptions.NotYetAvailableException;
 import com.google.ar.sceneform.AnchorNode;
+import com.google.ar.sceneform.ArSceneView;
+import com.google.ar.sceneform.Node;
+import com.google.ar.sceneform.math.Vector3;
+import com.google.ar.sceneform.rendering.MaterialFactory;
 import com.google.ar.sceneform.rendering.ModelRenderable;
+import com.google.ar.sceneform.rendering.ShapeFactory;
+import com.google.ar.sceneform.utilities.Preconditions;
 import com.google.ar.sceneform.ux.ArFragment;
 import com.google.ar.sceneform.ux.TransformableNode;
 
@@ -50,6 +62,7 @@ import org.tensorflow.demo.arcore.common.rendering.PointCloudRenderer;
 import org.tensorflow.demo.env.BorderedText;
 import org.tensorflow.demo.env.ImageUtils;
 import org.tensorflow.demo.initializer.ObjectReferenceList;
+import org.tensorflow.demo.initializer.ReferenceObject;
 import org.tensorflow.demo.simulator.App;
 import org.tensorflow.demo.simulator.AppRandomizer;
 import org.tensorflow.demo.simulator.Randomizer;
@@ -58,17 +71,25 @@ import org.tensorflow.demo.tracking.DemoMultiBoxTrackerWithARCore;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.CompletableFuture;
 
 public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
 
     private static final String TAG = MrDemoDetectorWithARCoreActivity.class.getName();
 
     private ArFragment fragment;
+    private List<ReferenceObject> renderables = new ArrayList<>();
+    private ModelRenderable redSphereRenderable;
     private ModelRenderable andyRenderable;
+    private ModelRenderable iglooRenderable;
+    private ModelRenderable houseRenderable;
     private SeekBar seekBar;
+
+    //private Session session;
 
     private final BackgroundRenderer backgroundRenderer = new BackgroundRenderer();
     //private final ObjectRenderer virtualObject = new ObjectRenderer();
@@ -231,6 +252,14 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
 
         seekBar = (SeekBar) findViewById(R.id.seekBar);
 
+/*        if (session == null) {
+            try {
+                session = new Session(this);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }*/
+
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 
             @Override
@@ -253,6 +282,8 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
 
         });
 
+        readyRenderables();
+
         fragment.getArSceneView().getScene().setOnUpdateListener(frameTime -> {
             fragment.onUpdate(frameTime);
 
@@ -263,45 +294,105 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
                 //onUpdate();
                 if (initialized) recognizeImage(image);
 
-                ARprocessing();
+                if (isDebug()) {
+                    ARprocessing();
+                }
             } catch (NotYetAvailableException e1) {
                 e1.printStackTrace();
             }
 
         });
 
-        // When you build a Renderable, Sceneform loads its resources in the background while returning
-        // a CompletableFuture. Call thenAccept(), handle(), or check isDone() before calling get().
-        ModelRenderable.builder()
-                .setSource(this, R.raw.andy)
-                .build()
-                .thenAccept(renderable -> andyRenderable = renderable)
-                .exceptionally(
-                        throwable -> {
-                            Toast toast =
-                                    Toast.makeText(this, "Unable to load andy renderable", Toast.LENGTH_LONG);
-                            toast.setGravity(Gravity.CENTER, 0, 0);
-                            toast.show();
-                            Log.e(TAG,"Unable to load andy renderable");
-                            return null;
-                        });
-
         fragment.setOnTapArPlaneListener(
                 (HitResult hitResult, Plane plane, MotionEvent motionEvent) -> {
-                    if (andyRenderable == null) {
+
+                    //Session session = fragment.getArSceneView().getSession();
+                    //Preconditions.checkNotNull(session, "The session cannot be null.");
+
+                    if (renderables.isEmpty()) {
                         return;
                     }
 
-                    // Create the Anchor.
-                    Anchor anchor = hitResult.createAnchor();
-                    AnchorNode anchorNode = new AnchorNode(anchor);
-                    anchorNode.setParent(fragment.getArSceneView().getScene());
+                    try {
 
-                    // Create the transformable andy and add it to the anchor.
-                    TransformableNode andy = new TransformableNode(fragment.getTransformationSystem());
-                    andy.setParent(anchorNode);
-                    andy.setRenderable(andyRenderable);
-                    andy.select();
+                        for (ReferenceObject virtualObject : renderables) {
+                            if (virtualObject.isVirtualRendered()) continue;
+
+/*                            if (virtualObject.getVirtualAnchorId() == null) {
+                                // Create the Anchor.
+                                Anchor anchor = hitResult.createAnchor();
+                            } else {
+                                String anchorId = virtualObject.getVirtualAnchorId();
+                                //anchor = session.resolveCloudAnchor(anchorId);
+                                if (anchor.getCloudAnchorState().isError()) return;
+                            }*/
+
+                            Anchor anchor = hitResult.createAnchor();
+
+                            Log.i(TAG, String.format("Pose translation: x = %.2f, y = %.2f, z = %.2f. \n" +
+                                            "HitResult: x = %.2f, y = %.2f, z = %.2f. ",
+                                    anchor.getPose().tx(),
+                                    anchor.getPose().ty(),
+                                    anchor.getPose().tz(),
+                                    hitResult.getHitPose().tx(),
+                                    hitResult.getHitPose().ty(),
+                                    hitResult.getHitPose().tz())
+                            );
+
+                            if (anchor.getTrackingState() != TrackingState.TRACKING) return;
+
+                            AnchorNode anchorNode = new AnchorNode(anchor);
+                            anchorNode.setParent(fragment.getArSceneView().getScene());
+
+                            // Create the transformable andy and add it to the anchor.
+                            TransformableNode transformableNode = new TransformableNode(fragment.getTransformationSystem());
+                            transformableNode.setParent(anchorNode);
+
+                            if (virtualObject.getTitle() == "igloo" && iglooRenderable == null)
+                                continue;
+                            else if (virtualObject.getTitle() == "droid" && andyRenderable == null)
+                                continue;
+                            else if (virtualObject.getTitle() == "house" && houseRenderable == null)
+                                continue;
+                            else if (virtualObject.getTitle() == "igloo"
+                                    && iglooRenderable != null
+                                    && !virtualObject.isVirtualRendered()) {
+
+                                transformableNode.setRenderable(iglooRenderable);
+                                transformableNode.select();
+
+                                //virtualObject.setVirtualAnchorId(anchor.getCloudAnchorId());
+                                //session.hostCloudAnchor(anchor);
+                                virtualObject.setVirtualRendered(true);
+                                return;
+                            } else if (virtualObject.getTitle() == "droid"
+                                    && andyRenderable != null
+                                    && !virtualObject.isVirtualRendered()) {
+
+                                transformableNode.setRenderable(andyRenderable);
+                                transformableNode.select();
+
+                                //virtualObject.setVirtualAnchorId(anchor.getCloudAnchorId());
+                                //session.hostCloudAnchor(anchor);
+                                virtualObject.setVirtualRendered(true);
+                                return;
+                            } else if (virtualObject.getTitle() == "house"
+                                    && houseRenderable != null
+                                    && !virtualObject.isVirtualRendered()) {
+
+                                transformableNode.setRenderable(houseRenderable);
+                                transformableNode.select();
+
+                                //virtualObject.setVirtualAnchorId(anchor.getCloudAnchorId());
+                                //session.hostCloudAnchor(anchor);
+                                virtualObject.setVirtualRendered(true);
+                                return;
+                            }
+
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 });
 
         //initializeGallery();
@@ -312,11 +403,69 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
 
     }
 
+/*    *//** Listener for the results of a host or resolve operation. *//*
+    interface sessionListener {
+
+        *//** This method is invoked when the results of a Cloud Anchor operation are available. *//*
+        void onSessionTaskComplete(Anchor anchor);
+    }
+
+    private final class DemoSessionListener implements sessionListener {
+
+        @Override
+        public void onSessionTaskComplete(Anchor anchor){
+            // Render the corresponding
+        }
+    }*/
+
+
     private void ARprocessing(){
         Frame frame = fragment.getArSceneView().getArFrame();
 
+        ArSceneView sceneView = fragment.getArSceneView();
+
         PointCloud pointCloud = frame.acquirePointCloud();
         Log.i(TAG,String.format("Number of points in pointCloud %d", pointCloud.getPoints().remaining()/4));
+
+        List<HitResult> pointHitResults = frame.hitTest(sceneView.getWidth()/2.0f, sceneView.getHeight()/2.0f);
+
+        for (HitResult hit: pointHitResults) {
+            Trackable trackable = hit.getTrackable();
+            if (trackable instanceof Plane) {
+                // Check if the hit was within the plane's polygon.
+                Log.i(TAG,String.format("Trackable is a Plane with exX:%.2f, exZ:%.2f",
+                        ((Plane) trackable).getExtentX(),
+                        ((Plane) trackable).getExtentZ())
+                );
+            } else if (trackable instanceof Point) {
+                // Check if the hit was against an oriented point.
+                Log.i(TAG,String.format("Trackable is a Point and ESTIMATED_SURFACE_NORMAL is %s, with distance %.4f.",
+                        String.valueOf(((Point) trackable).getOrientationMode() == Point.OrientationMode.ESTIMATED_SURFACE_NORMAL),
+                        hit.getDistance())
+                );
+                Anchor newAnchor = hit.createAnchor();
+                AnchorNode anchorNode = new AnchorNode(newAnchor);
+                anchorNode.setParent(fragment.getArSceneView().getScene());
+
+                Vector3 anchorWorldPos = anchorNode.getWorldPosition();
+
+                Log.i(TAG,String.format("Corresponding node world-space position x = %.2f, y = %.2f, z = %.2f",
+                        anchorWorldPos.x,
+                        anchorWorldPos.y,
+                        anchorWorldPos.z
+                        ));
+                // Create the transformable sphere and add it to the anchor.
+                //TransformableNode redSphere = new TransformableNode(fragment.getTransformationSystem());
+                Node redSphere = new Node();
+                redSphere.setParent(anchorNode);
+                redSphere.setRenderable(redSphereRenderable);
+                //redSphere.select();
+
+            }
+        }
+
+        //List<> trackables = frame.get();
+
 
     }
 
@@ -332,6 +481,83 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
             Toast.makeText(this, "portrait", Toast.LENGTH_SHORT).show();
             reconfigureViews();
         }
+    }
+
+    private void readyRenderables() {
+
+        List<ReferenceObject> virtualObjectslist = objectReferenceList.getVirtualObjects();
+
+        for (ReferenceObject virtualObject : virtualObjectslist) {
+            if (virtualObject.getTitle() == "droid") {
+
+                // When you build a Renderable, Sceneform loads its resources in the background while returning
+                // a CompletableFuture. Call thenAccept(), handle(), or check isDone() before calling get().
+                ModelRenderable.builder()
+                        .setSource(this, virtualObject.getVirtualRawResourceId())
+                        .build()
+                        .thenAccept(renderable -> andyRenderable = renderable)
+                        .exceptionally(
+                                throwable -> {
+                                    Toast toast =
+                                            Toast.makeText(this, "Unable to load droid renderable", Toast.LENGTH_LONG);
+                                    toast.setGravity(Gravity.CENTER, 0, 0);
+                                    toast.show();
+                                    Log.e(TAG, "Unable to load droid renderable");
+                                    return null;
+                                });
+                virtualObject.setVirtualRendered(false);
+                renderables.add(virtualObject);
+            } else if (virtualObject.getTitle() == "igloo") {
+
+                // When you build a Renderable, Sceneform loads its resources in the background while returning
+                // a CompletableFuture. Call thenAccept(), handle(), or check isDone() before calling get().
+                ModelRenderable.builder()
+                        .setSource(this, virtualObject.getVirtualRawResourceId())
+                        .build()
+                        .thenAccept(renderable -> iglooRenderable = renderable)
+                        .exceptionally(
+                                throwable -> {
+                                    Toast toast =
+                                            Toast.makeText(this, "Unable to load igloo renderable", Toast.LENGTH_LONG);
+                                    toast.setGravity(Gravity.CENTER, 0, 0);
+                                    toast.show();
+                                    Log.e(TAG, "Unable to load igloo renderable");
+                                    return null;
+                                });
+                virtualObject.setVirtualRendered(false);
+                renderables.add(virtualObject);
+            } else if (virtualObject.getTitle() == "house") {
+
+                // When you build a Renderable, Sceneform loads its resources in the background while returning
+                // a CompletableFuture. Call thenAccept(), handle(), or check isDone() before calling get().
+                ModelRenderable.builder()
+                        .setSource(this, virtualObject.getVirtualRawResourceId())
+                        .build()
+                        .thenAccept(renderable -> houseRenderable = renderable)
+                        .exceptionally(
+                                throwable -> {
+                                    Toast toast =
+                                            Toast.makeText(this, "Unable to load house renderable", Toast.LENGTH_LONG);
+                                    toast.setGravity(Gravity.CENTER, 0, 0);
+                                    toast.show();
+                                    Log.e(TAG, "Unable to load house renderable");
+                                    return null;
+                                });
+                virtualObject.setVirtualRendered(false);
+                renderables.add(virtualObject);
+            }
+            //Log.i(TAG,"Added virtual object: "+virtualObject.getTitle());
+        }
+
+        MaterialFactory.makeOpaqueWithColor(this, new com.google.ar.sceneform.rendering.Color(Color.RED))
+                .thenAccept(
+                        material -> {
+                            redSphereRenderable =
+                                    ShapeFactory.makeSphere(0.05f, new Vector3(0.0f, 0.0f, 0.0f), material);
+                        });
+        
+        //return renderables;
+
     }
 
     private void initialize(Image image){

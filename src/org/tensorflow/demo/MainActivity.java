@@ -16,7 +16,6 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -170,6 +169,8 @@ public class MainActivity extends Activity {
 
         listview = (ListView) findViewById(R.id.listview);
 
+        addVirtualObjects();
+
         final ArrayList<ReferenceObject> list = new ArrayList<>(objectReferenceList.getList());
 
         if (!list.isEmpty()) {
@@ -239,7 +240,7 @@ public class MainActivity extends Activity {
             ViewHolder holder = (ViewHolder) rowView.getTag();
             ReferenceObject object = list.get(position);
 
-            if (object.getSensitivity()) {
+            if (object.isSensitive()) {
                 String description =  object.getTitle() + ", sensitive";
                 holder.text.setText(description);
                 holder.text.setTextColor(Color.RED);
@@ -249,21 +250,34 @@ public class MainActivity extends Activity {
                 holder.text.setTextColor(Color.DKGRAY);
             }
 
-            Matrix matrix = new Matrix();
-            matrix.postRotate(90);
+            if (object.isVirtual()) {
+                holder.image.setImageResource(object.getVirtualId());
+            } else {
 
-            Bitmap listImage = Bitmap.createScaledBitmap(object.getReferenceImage(),
-                    100, 100, false);
+                Matrix matrix = new Matrix();
+                matrix.postRotate(90);
 
-            holder.image.setImageBitmap(Bitmap.createBitmap(listImage,
-                    0,0,
-                    listImage.getWidth(), listImage.getHeight(),
-                    matrix, true)
-            );
+                Bitmap listImage = Bitmap.createScaledBitmap(object.getReferenceImage(),
+                        100, 100, false);
+                holder.image.setImageBitmap(Bitmap.createBitmap(listImage,
+                        0,0,
+                        listImage.getWidth(), listImage.getHeight(),
+                        matrix, true)
+                );
+            }
 
             return rowView;
         }
 
+    }
+
+    private void addVirtualObjects(){
+        if (!objectReferenceList.isWithVirtualObjects()) {
+            objectReferenceList.add(R.drawable.igloo_thumb, R.raw.igloo, "igloo");
+            objectReferenceList.add(R.drawable.droid_thumb, R.raw.andy,"droid");
+            objectReferenceList.add(R.drawable.house_thumb, R.raw.house,"house");
+            objectReferenceList.setWithVirtualObjects(true);
+        }
     }
 
     public void generateAppList(View view){
@@ -562,7 +576,7 @@ public class MainActivity extends Activity {
         LOGGER.d("onStart " + this);
         super.onStart();
 
-        initialize();
+        //();
         startBackgroundThread();
     }
 
@@ -571,7 +585,7 @@ public class MainActivity extends Activity {
         LOGGER.d("onResume " + this);
         super.onResume();
 
-        initialize();
+        //initialize();
         startBackgroundThread();
     }
 

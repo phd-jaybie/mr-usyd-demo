@@ -3,29 +3,16 @@ package org.tensorflow.demo.initializer;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.os.SystemClock;
-import android.util.Pair;
 
 import org.opencv.android.Utils;
-import org.opencv.calib3d.Calib3d;
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.DMatch;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.Point;
-import org.opencv.features2d.DescriptorMatcher;
 import org.opencv.features2d.FlannBasedMatcher;
-import org.opencv.features2d.ORB;
-import org.opencv.imgproc.Imgproc;
 import org.opencv.xfeatures2d.SIFT;
-import org.tensorflow.demo.tracking.MultiBoxTracker;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,6 +26,8 @@ import static org.tensorflow.demo.MrCameraActivity.MIN_MATCH_COUNT;
 public class ObjectReferenceList {
 
     private static final ObjectReferenceList instance = new ObjectReferenceList();
+
+    private static boolean withVirtualObjects = false;
 
     // Private constructor prevents instantiation from other classes
     private ObjectReferenceList() {
@@ -102,6 +91,10 @@ public class ObjectReferenceList {
         list.add(new ReferenceObject(object));
     }
 
+    public void add(Integer drawable, Integer raw, String title){
+        list.add(new ReferenceObject(drawable, raw,title));
+    }
+
 /*    public void refreshList(){
         for (final ReferenceObject object: list){
             // do something
@@ -162,7 +155,7 @@ public class ObjectReferenceList {
     public boolean isSensitive(String targetTitle, Bitmap target) {
 
         for (final ReferenceObject listedObject: list) {
-            if ((listedObject.getTitle().equals(targetTitle)) && (listedObject.getSensitivity()))
+            if ((listedObject.getTitle().equals(targetTitle)) && (listedObject.isSensitive()))
                 if (objectMatcher(listedObject.getReferenceImage(), target)) return true;
         }
 
@@ -172,10 +165,30 @@ public class ObjectReferenceList {
     public boolean isSensitive(String targetTitle) {
 
         for (final ReferenceObject listedObject: list) {
-            if ((listedObject.getTitle().equals(targetTitle)) && (listedObject.getSensitivity()))
+            if ((listedObject.getTitle().equals(targetTitle)) && (listedObject.isSensitive()))
                 return true;
         }
 
         return false;
     }
+
+    public static void setWithVirtualObjects(boolean withVirtualObjects) {
+        ObjectReferenceList.withVirtualObjects = withVirtualObjects;
+    }
+
+    public static boolean isWithVirtualObjects() {
+        return withVirtualObjects;
+    }
+
+    public List<ReferenceObject> getVirtualObjects(){
+        List<ReferenceObject> virtualObjectList = new ArrayList<>();
+        for(ReferenceObject referenceObject: list){
+            if (referenceObject.isVirtual()
+                    && !referenceObject.isSensitive())
+                virtualObjectList.add(referenceObject);
+        }
+
+        return virtualObjectList;
+    }
+
 }
