@@ -34,6 +34,7 @@ import com.google.ar.core.HitResult;
 import com.google.ar.core.Plane;
 import com.google.ar.core.Point;
 import com.google.ar.core.PointCloud;
+import com.google.ar.core.Pose;
 import com.google.ar.core.Session;
 import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingState;
@@ -418,6 +419,36 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
         }
     }*/
 
+    /***
+
+
+    private boolean updateHitTest() {
+        Frame frame = fragment.getArSceneView().getArFrame();
+        android.graphics.Point pt = getScreenCenter();
+        List<HitResult> hits;
+        boolean wasHitting = isHitting;
+        isHitting = false;
+        if (frame != null) {
+            hits = frame.hitTest(pt.x, pt.y);
+            for (HitResult hit : hits) {
+                Trackable trackable = hit.getTrackable();
+                if ((trackable instanceof Plane &&
+                        ((Plane) trackable).isPoseInPolygon(hit.getHitPose()))) {
+                    isHitting = true;
+                    break;
+                }
+            }
+        }
+        return wasHitting != isHitting;
+    }
+
+    private android.graphics.Point getScreenCenter() {
+        View vw = findViewById(android.R.id.content);
+        return new android.graphics.Point(vw.getWidth()/2, vw.getHeight()/2);
+    }
+
+     * ***/
+
 
     private void ARprocessing(){
         Frame frame = fragment.getArSceneView().getArFrame();
@@ -432,10 +463,18 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
         for (HitResult hit: pointHitResults) {
             Trackable trackable = hit.getTrackable();
             if (trackable instanceof Plane) {
+                Pose planePose = ((Plane) trackable).getCenterPose();
                 // Check if the hit was within the plane's polygon.
-                Log.i(TAG,String.format("Trackable is a Plane with exX:%.2f, exZ:%.2f",
+                Log.i(TAG,String.format("Trackable is a %s Plane with exX:%.2f, exZ:%.2f",
+                        ((Plane) trackable).getType().toString(),
                         ((Plane) trackable).getExtentX(),
                         ((Plane) trackable).getExtentZ())
+                );
+                Log.i(TAG,String.format("Plane's pose translation: x = %.2f, y = %.2f, z = %.2f",
+                        planePose.tx(),
+                        planePose.ty(),
+                        planePose.tz()
+                        )
                 );
             } else if (trackable instanceof Point) {
                 // Check if the hit was against an oriented point.
@@ -465,7 +504,6 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
         }
 
         //List<> trackables = frame.get();
-
 
     }
 
@@ -560,6 +598,9 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
 
     }
 
+    /***
+     * Initializes the TensorFlow model
+     * **/
     private void initialize(Image image){
 
         previewHeight = image.getHeight();
