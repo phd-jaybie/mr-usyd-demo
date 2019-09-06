@@ -17,6 +17,9 @@ package org.tensorflow.demo;
 
 import android.graphics.Bitmap;
 import android.graphics.RectF;
+
+import com.google.ar.core.Anchor;
+
 import java.util.List;
 
 /**
@@ -46,6 +49,9 @@ public interface Classifier {
     /** Optional location within the source image for the location of the recognized object. */
     private RectF location;
 
+    /** Optional 3D location within the ARSceneView for the 3D location of the recognized object. */
+    private Anchor anchor;
+
     public Recognition(
         final String id, final String title, final Float confidence, final RectF location) {
       this.id = id;
@@ -72,6 +78,10 @@ public interface Classifier {
 
     public void setLocation(RectF location) {
       this.location = location;
+    }
+
+    public void setAnchor(Anchor anchor) {
+      this.anchor = anchor;
     }
 
     @Override

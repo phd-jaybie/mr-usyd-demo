@@ -563,28 +563,27 @@ public class DemoMultiBoxTrackerWithARCore {
 
     private void refreshTrackedObjects(Bitmap frame){
 
-    Iterator<TrackedRecognition> iterator = trackedObjects.iterator();
+        Iterator<TrackedRecognition> iterator = trackedObjects.iterator();
 
-    while (iterator.hasNext()) {
-      TrackedRecognition recognition = iterator.next();
-      if (SystemClock.uptimeMillis() - recognition.lastUpdate > TRACKING_TIMEOUT) {
-        iterator.remove();
-        // Remove tracked objects if last update was more than a second ago.
-        continue;
-      }
+        while (iterator.hasNext()) {
+          TrackedRecognition recognition = iterator.next();
+          if (SystemClock.uptimeMillis() - recognition.lastUpdate > TRACKING_TIMEOUT) {
+            iterator.remove();
+            // Remove tracked objects if last update was more than a second ago.
+            continue;
+          }
 
-      Rect roundedLocation = new Rect();
-      recognition.location.round(roundedLocation);
+          Rect roundedLocation = new Rect();
+          recognition.location.round(roundedLocation);
 
-      try {
-        recognition.sensitivity = objectReferenceList.isSensitive(recognition.title);
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
+          try {
+            recognition.sensitivity = objectReferenceList.isSensitive(recognition.title);
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
 
+        }
     }
-
-  }
 
   private boolean initialized = false;
 /*
@@ -1139,81 +1138,81 @@ public class DemoMultiBoxTrackerWithARCore {
     private void processResults(
             final long timestamp, final List<Recognition> results, final byte[] originalFrame) {
 
-    final List<Pair<Float, Recognition>> rectsToTrack = new LinkedList<Pair<Float, Recognition>>();
+        final List<Pair<Float, Recognition>> rectsToTrack = new LinkedList<Pair<Float, Recognition>>();
 
-    screenRects.clear();
-    final Matrix rgbFrameToScreen = new Matrix(getFrameToCanvasMatrix());
+        screenRects.clear();
+        final Matrix rgbFrameToScreen = new Matrix(getFrameToCanvasMatrix());
 
-    for (final Recognition result : results) {
-      if (result.getLocation() == null) {
-        continue;
-      }
+        for (final Recognition result : results) {
+          if (result.getLocation() == null) {
+            continue;
+          }
 
-      final RectF detectionFrameRect = new RectF(result.getLocation());
+          final RectF detectionFrameRect = new RectF(result.getLocation());
 
-      final RectF detectionScreenRect = new RectF();
-      rgbFrameToScreen.mapRect(detectionScreenRect, detectionFrameRect);
+          final RectF detectionScreenRect = new RectF();
+          rgbFrameToScreen.mapRect(detectionScreenRect, detectionFrameRect);
 
-      logger.v(
-          "Result! Frame: " + result.getLocation() + " mapped to screen:" + detectionScreenRect);
+          logger.v(
+              "Result! Frame: " + result.getLocation() + " mapped to screen:" + detectionScreenRect);
 
-      screenRects.add(new Pair<Float, RectF>(result.getConfidence(), detectionScreenRect));
+          screenRects.add(new Pair<Float, RectF>(result.getConfidence(), detectionScreenRect));
 
-      if (detectionFrameRect.width() < MIN_SIZE || detectionFrameRect.height() < MIN_SIZE) {
-        logger.w("Degenerate rectangle! " + detectionFrameRect);
-        continue;
-      }
+          if (detectionFrameRect.width() < MIN_SIZE || detectionFrameRect.height() < MIN_SIZE) {
+            logger.w("Degenerate rectangle! " + detectionFrameRect);
+            continue;
+          }
 
-      rectsToTrack.add(new Pair<Float, Recognition>(result.getConfidence(), result));
-    }
-
-    if (rectsToTrack.isEmpty()) {
-      logger.v("Nothing to track, aborting.");
-      return;
-    }
-
-    if (objectTracker == null) {
-      trackedObjects.clear();
-      for (final Pair<Float, Recognition> potential : rectsToTrack) {
-
-        final TrackedRecognition trackedRecognition = new TrackedRecognition();
-
-        // Separate handling for results from Marker detection
-        if (potential.second.getId() == "Marker") {
-          trackedRecognition.detectionConfidence = potential.first;
-          trackedRecognition.location = new RectF(potential.second.getLocation());
-          trackedRecognition.trackedObject = null;
-          trackedRecognition.title = potential.second.getId() + potential.second.getTitle();
-          trackedRecognition.color = COLORS[trackedObjects.size()];
-          //trackedRecognition.lastUpdate = SystemClock.uptimeMillis();
-          //trackedRecognition.sensitivity = false;
-
-          trackedObjects.add(trackedRecognition);
-          continue;
+          rectsToTrack.add(new Pair<Float, Recognition>(result.getConfidence(), result));
         }
 
-        trackedRecognition.detectionConfidence = potential.first;
-        trackedRecognition.location = new RectF(potential.second.getLocation());
-        trackedRecognition.trackedObject = null;
-        trackedRecognition.title = potential.second.getTitle();
-        trackedRecognition.color = COLORS[trackedObjects.size()];
-        trackedRecognition.lastUpdate = SystemClock.uptimeMillis();
-        trackedRecognition.sensitivity = objectReferenceList.isSensitive(trackedRecognition.title);
-
-        trackedObjects.add(trackedRecognition);
-
-        if (trackedObjects.size() >= COLORS.length) {
-          break;
+        if (rectsToTrack.isEmpty()) {
+          logger.v("Nothing to track, aborting.");
+          return;
         }
-      }
 
-      return;
-    }
+        if (objectTracker == null) {
+          trackedObjects.clear();
+          for (final Pair<Float, Recognition> potential : rectsToTrack) {
 
-    logger.i("%d rects to track", rectsToTrack.size());
-    for (final Pair<Float, Recognition> potential : rectsToTrack) {
-      handleDetection(originalFrame, timestamp, potential);
-    }
+            final TrackedRecognition trackedRecognition = new TrackedRecognition();
+
+            // Separate handling for results from Marker detection
+            if (potential.second.getId() == "Marker") {
+              trackedRecognition.detectionConfidence = potential.first;
+              trackedRecognition.location = new RectF(potential.second.getLocation());
+              trackedRecognition.trackedObject = null;
+              trackedRecognition.title = potential.second.getId() + potential.second.getTitle();
+              trackedRecognition.color = COLORS[trackedObjects.size()];
+              //trackedRecognition.lastUpdate = SystemClock.uptimeMillis();
+              //trackedRecognition.sensitivity = false;
+
+              trackedObjects.add(trackedRecognition);
+              continue;
+            }
+
+            trackedRecognition.detectionConfidence = potential.first;
+            trackedRecognition.location = new RectF(potential.second.getLocation());
+            trackedRecognition.trackedObject = null;
+            trackedRecognition.title = potential.second.getTitle();
+            trackedRecognition.color = COLORS[trackedObjects.size()];
+            trackedRecognition.lastUpdate = SystemClock.uptimeMillis();
+            trackedRecognition.sensitivity = objectReferenceList.isSensitive(trackedRecognition.title);
+
+            trackedObjects.add(trackedRecognition);
+
+            if (trackedObjects.size() >= COLORS.length) {
+              break;
+            }
+          }
+
+          return;
+        }
+
+        logger.i("%d rects to track", rectsToTrack.size());
+        for (final Pair<Float, Recognition> potential : rectsToTrack) {
+          handleDetection(originalFrame, timestamp, potential);
+        }
     }
 
     private void handleDetection(

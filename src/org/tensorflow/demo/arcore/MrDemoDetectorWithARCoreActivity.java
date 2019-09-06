@@ -598,6 +598,23 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
 
     }
 
+    private Anchor localHitTest(RectF location){
+        Frame frame = fragment.getArSceneView().getArFrame();
+
+        Anchor anchor = null;
+        List<HitResult> hits;
+
+        isHitting = false;
+        if (frame != null) {
+            hits = frame.hitTest(location.centerX(), location.centerY());
+            HitResult firstHit = hits.get(0);
+
+            anchor = firstHit.createAnchor();
+
+        }
+        return anchor;
+    }
+
     /***
      * Initializes the TensorFlow model
      * **/
@@ -1109,11 +1126,14 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
                                 // Just checking the values of the RectF.
                                 Log.i(TAG,
                                         result.getTitle()
-                                                + "Bounding box dimensions are left: "
+                                                + ": Bounding box dimensions are left: "
                                                 + String.valueOf(location.left)
                                                 + " and bottom: "
                                                 + String.valueOf(location.bottom)
                                 );
+
+                                Anchor localAnchor = localHitTest(location);
+                                if (localAnchor !=null)  {result.setAnchor(localAnchor);}
 
                                 cropToFrameTransform.mapRect(location);
                                 result.setLocation(location);
