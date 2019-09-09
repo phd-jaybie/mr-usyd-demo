@@ -85,10 +85,13 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
     private ArFragment fragment;
     private List<ReferenceObject> renderables = new ArrayList<>();
     private ModelRenderable redSphereRenderable;
+    private ModelRenderable blueSphereRenderable;
     private ModelRenderable andyRenderable;
     private ModelRenderable iglooRenderable;
     private ModelRenderable houseRenderable;
     private SeekBar seekBar;
+
+    private List<Classifier.Recognition> Recognitions = new LinkedList<Classifier.Recognition>();
 
     //private Session session;
 
@@ -468,7 +471,8 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
                 Log.i(TAG,String.format("Trackable is a %s Plane with exX:%.2f, exZ:%.2f",
                         ((Plane) trackable).getType().toString(),
                         ((Plane) trackable).getExtentX(),
-                        ((Plane) trackable).getExtentZ())
+                        ((Plane) trackable).getExtentZ()
+                        )
                 );
                 Log.i(TAG,String.format("Plane's pose translation: x = %.2f, y = %.2f, z = %.2f",
                         planePose.tx(),
@@ -500,6 +504,30 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
                 redSphere.setRenderable(redSphereRenderable);
                 //redSphere.select();
 
+            }
+        }
+
+        // If the recognitions is not empty.
+        if (!Recognitions.isEmpty()) {
+
+            for (final Classifier.Recognition recognition : Recognitions) {
+                final Anchor recognitionAnchor = recognition.getAnchor();
+                if (recognitionAnchor != null) {
+
+                    AnchorNode anchorNode = new AnchorNode(recognitionAnchor);
+                    anchorNode.setParent(fragment.getArSceneView().getScene());
+
+                    //Vector3 anchorWorldPos = anchorNode.getWorldPosition();
+
+                    Log.i(TAG, String.format("Object %s is detected and anchored",
+                            recognition.getTitle()
+                    ));
+                    // Create the transformable sphere and add it to the anchor.
+                    //TransformableNode redSphere = new TransformableNode(fragment.getTransformationSystem());
+                    Node blueSphere = new Node();
+                    blueSphere.setParent(anchorNode);
+                    blueSphere.setRenderable(blueSphereRenderable);
+                }
             }
         }
 
@@ -593,7 +621,14 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
                             redSphereRenderable =
                                     ShapeFactory.makeSphere(0.05f, new Vector3(0.0f, 0.0f, 0.0f), material);
                         });
-        
+
+        MaterialFactory.makeOpaqueWithColor(this, new com.google.ar.sceneform.rendering.Color(Color.BLUE))
+                .thenAccept(
+                        material -> {
+                            blueSphereRenderable =
+                                    ShapeFactory.makeSphere(0.05f, new Vector3(0.0f, 0.0f, 0.0f), material);
+                        });
+
         //return renderables;
 
     }
@@ -607,6 +642,10 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
         isHitting = false;
         if (frame != null) {
             hits = frame.hitTest(location.centerX(), location.centerY());
+
+            if (hits.isEmpty()) { return null;}
+
+
             HitResult firstHit = hits.get(0);
 
             anchor = firstHit.createAnchor();
@@ -1140,6 +1179,8 @@ public class MrDemoDetectorWithARCoreActivity extends AppCompatActivity {
                                 mappedRecognitions.add(result);
                             }
                         }
+
+                        Recognitions.addAll(mappedRecognitions);
 
                         tracker.trackResults(mappedRecognitions, luminanceCopy, currTimestamp);
                         trackingOverlay.postInvalidate();

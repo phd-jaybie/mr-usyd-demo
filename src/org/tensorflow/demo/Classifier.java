@@ -58,6 +58,7 @@ public interface Classifier {
       this.title = title;
       this.confidence = confidence;
       this.location = location;
+      this.anchor = null;
     }
 
     public String getId() {
@@ -74,6 +75,10 @@ public interface Classifier {
 
     public RectF getLocation() {
       return new RectF(location);
+    }
+
+    public Anchor getAnchor() {
+      return anchor;
     }
 
     public void setLocation(RectF location) {
